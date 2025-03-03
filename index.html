@@ -4,10 +4,16 @@
     <meta charset = "UTF-8">
     <title>射击游戏</title>
     <style>
+
+        @font-face {
+            font-family: 'Jellee';
+            src: url('fonts/Jellee.ttf');
+        }
+
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Impact', 'Arial Black', sans-serif;
+            font-family: 'Jellee', sans-serif; /* 可以将这个字体应用到整个页面或特定元素 */
         }
         canvas { border: 1px solid white }
         canvas {
@@ -25,7 +31,7 @@
         background-image: url('textures/d1b.png');
         background-size: cover;
         background-position: center top;
-        z-index: -1145141919; 
+        z-index: -1145141919; /*(?)*/
         opacity: 1;
         transition: top 1.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -48,7 +54,7 @@
         top: 0;
         opacity: 1;
         }
-        
+
     </style>
 </head>
 <body bgcolor="333333">
@@ -79,11 +85,13 @@
         const ctx = canvas.getContext('2d');
         const restartBtn = document.getElementById('restartBtn');
 
-        //伏笔，第1128行要考
+        //伏笔，后面要考
         const damageTypes =[1.5,200,60000,20000000,6000000000,1000000000000];
         const XTypes =[1,2,3,4,5,6];
         const upgradeSpawnTime =[400,800,1200,1600,2000,99999999];
         const colors =['#ffffff','#ffffff','#ffff00','#888888','#00ffff','#000000'];
+        const barrierColor1 = [];
+        const barrierColor2 = [];
         const bulletSpeeds =[5,8,12,16,22,30];
         const fireLims =[5,4,3.3,2.5,2,1];
         const MaxD = 11;
@@ -213,8 +221,8 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 5,
-                maxHealth: 5,
+                health: 9999,
+                maxHealth: 9999,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
@@ -343,7 +351,7 @@
             if((gameTime%15<=10) && (Date.now() - enemySpawnTimer > enemySpawnRate/timeScale)) {
                 spawnEnemies(enemyHealthBase,fillSpeedBase,enemiesSizeBase,0);
                 // spawnEnemies(enemyHealthBase*6,fillSpeedBase*1.4,enemiesSizeBase*1.2,player.bulletType);
-                if (Math.random()<0.1 && gameTime>40)  spawnEnemies(enemyHealthBase/1.5,fillSpeedBase*2.5,enemiesSizeBase/1.5,0);
+                if (Math.random()<0.1 && gameTime>40 && 1+Math.log(enemyHealthBase)/4-difficulty>0.05)  spawnEnemies(enemyHealthBase/1.5,fillSpeedBase*2.5,enemiesSizeBase/1.5,0);
                 enemySpawnTimer = Date.now();
             }
 
@@ -424,81 +432,96 @@
         }
 
         // 敌人绘制
+        // 优先保证高速敌人在最上面，其次保证靠前的敌人在最上面
         function drawEnemies() {
-            Array.from(enemies).reverse().forEach(enemy => {
-                // 判断难度和+-
-                const difficulty = Math.min(MaxD,1+Math.floor(Math.log(enemy.maxHealth)/4));
-                const remain = 1+Math.log(enemy.maxHealth)/4-Math.min(MaxD,Math.floor(1+Math.log(enemy.maxHealth)/4));
-                let add = '';
-                  if (remain<1/3){
-                      add = '-';
-                  }
-                  if (remain>2/3){
-                      add = '+';
-                  }
-                // 绘制敌人主体
-                if (enemy.type===0){
-                    // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
-                    ctx.beginPath();
-                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
-                    ctx.shadowOffsetX = 0; 
-                    ctx.shadowOffsetY = enemy.size**0.5; 
-                    ctx.shadowBlur = 12; 
-                    ctx.globalAlpha = enemy.alpha;
-                    ctx.save();
-                    // 做了半天才发现translate函数be like:
-                    ctx.translate(enemy.x, enemy.y);
-                    ctx.rotate(enemy.rotate * Math.PI / 180);              
-                    ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
-                    drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Arial black', '#FFF');
-                    ctx.restore();
-                    // ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
-                    // ctx.fill();
-                    ctx.shadowColor = 'transparent';
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                    ctx.shadowBlur = 0;
-                }else{
-                    ctx.beginPath();
-                    ctx.filter = 'drop-shadow(0px 0px 5px '+bulletColor(enemy.type+1)+')';
-                    // ctx.fillRect(enemy.x-enemy.size, enemy.y-enemy.size,enemy.size*2,enemy.size*2);
-                    // 十分激烈的坐标转换
-                    ctx.drawImage(bTypes[player.bulletType], enemy.x-enemy.size-enemy.size/8, enemy.y-enemy.size+enemy.size/8, 16/7*enemy.size,16/7*enemy.size);
-                    ctx.filter = 'none';
-                }
-                
-                // 绘制血条背景
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                if (enemy.boss<1){
-                    ctx.fillRect(enemy.x - 20, enemy.y - 10 - enemy.size, 40, 5);
-                }else{
-                    ctx.fillRect(enemy.x - 40, enemy.y - 10 - enemy.size, 80, 5);
-                }
-                
-                // 绘制当前血量
-                const healthWidth = (enemy.health / enemy.maxHealth) * 36;
-                ctx.fillStyle = enemy.health > enemy.maxHealth*0.4 ? '#0f0' : '#f00';
-                ctx.fillStyle = `hsl(${enemy.health / enemy.maxHealth * 120}, 70%, 50%)`;
+            const enemySpeeds = [0,fillSpeedBase/2.5, fillSpeedBase*1.2, 114514];
+            for (let i = 0; i < 3; i++) {
+                Array.from(enemies).reverse().forEach(enemy => {
+                    if (enemy.speed < enemySpeeds[i+1] && enemy.speed > enemySpeeds[i]){
+                        // 判断难度和+-
+                        const difficulty = Math.min(MaxD,1+Math.floor(Math.log(enemy.maxHealth)/4));
+                        const remain = 1+Math.log(enemy.maxHealth)/4-Math.min(MaxD,Math.floor(1+Math.log(enemy.maxHealth)/4));
+                        let add = '';
+                        if (remain<1/3){
+                            add = '-';
+                        }
+                        if (remain>2/3){
+                            add = '+';
+                        }
+                        // 绘制敌人主体
+                        if (enemy.type===0){
+                            // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
+                            ctx.beginPath();
+                            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
+                            ctx.shadowOffsetX = 0; 
+                            ctx.shadowOffsetY = enemy.size**0.5; 
+                            ctx.shadowBlur = 12; 
+                            ctx.globalAlpha = enemy.alpha;
+                            ctx.save();
+                            // 做了半天才发现translate函数be like:
+                            ctx.globalAlpha = 1;
+                            ctx.translate(enemy.x, enemy.y);
+                            ctx.rotate(enemy.rotate * Math.PI / 180); 
+                            // 小鬼警报系统() 
+                            if (i==2 && enemy.health>0 && enemy.y >canvas.height/2.6) ctx.filter = 'drop-shadow(0px 0px '+Math.min(5,(enemy.y-canvas.height/2.6)/5)+'px #f00)';      
+                            ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
+                            ctx.globalAlpha = enemy.alpha;
+                            drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
+                            ctx.restore();
+                            // ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+                            // ctx.fill();
+                            ctx.shadowColor = 'transparent';
+                            ctx.shadowOffsetX = 0;
+                            ctx.shadowOffsetY = 0;
+                            ctx.shadowBlur = 0;
+                            ctx.filter = 'none';
+                        }else{
+                            ctx.beginPath();
+                            ctx.filter = 'drop-shadow(0px 0px 5px '+bulletColor(enemy.type+1)+')';
+                            // ctx.fillRect(enemy.x-enemy.size, enemy.y-enemy.size,enemy.size*2,enemy.size*2);
+                            // 十分激烈的坐标转换
+                            ctx.drawImage(bTypes[player.bulletType], enemy.x-enemy.size-enemy.size/8, enemy.y-enemy.size+enemy.size/8, 16/7*enemy.size,16/7*enemy.size);
+                            ctx.filter = 'none';
+                        }
+                        
+                        if (enemy.health>0){
+                            // 绘制血条背景
+                            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                            if (enemy.boss<1){
+                                ctx.fillRect(enemy.x - 20, enemy.y - 10 - enemy.size, 40, 5);
+                            }else{
+                                ctx.fillRect(enemy.x - 40, enemy.y - 10 - enemy.size, 80, 5);
+                            }
+                            
+                            // 绘制当前血量
+                            const healthWidth = (enemy.health / enemy.maxHealth) * 36;
+                            ctx.fillStyle = enemy.health > enemy.maxHealth*0.4 ? '#0f0' : '#f00';
+                            ctx.fillStyle = `hsl(${enemy.health / enemy.maxHealth * 120}, 70%, 50%)`;
 
-                if (enemy.boss<1){
-                    ctx.fillRect(enemy.x - 18, enemy.y - 8 - enemy.size, healthWidth, 2);
-                }else{
-                    ctx.fillRect(enemy.x - 38, enemy.y - 8 - enemy.size, healthWidth*2, 2);
-                }
+                            if (enemy.boss<1){
+                                ctx.fillRect(enemy.x - 18, enemy.y - 8 - enemy.size, healthWidth, 2);
+                            }else{
+                                ctx.fillRect(enemy.x - 38, enemy.y - 8 - enemy.size, healthWidth*2, 2);
+                            }
 
-                // 显示血量数值
-                ctx.font = '15px Impact';
-                ctx.textAlign = 'center';
-                ctx.lineWidth = 3;
-                
-                ctx.strokeStyle = '#000';
-                ctx.strokeText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
-                ctx.strokeStyle = 'rgba(255,255,255,0)';
+                            // 显示血量数值
+                            // document.fonts.ready.then(function() {
+                            ctx.font = "15px 'Jellee'";
+                            ctx.textAlign = 'center';
+                            ctx.lineWidth = 3;
+                            
+                            ctx.strokeStyle = '#000';
+                            ctx.strokeText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
+                            ctx.strokeStyle = 'rgba(255,255,255,0)';
 
-                ctx.fillStyle = '#FFF';
-                ctx.fillText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
-            });
-            ctx.globalAlpha = 1.0;
+                            ctx.fillStyle = '#FFF';
+                            ctx.fillText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
+                            //});
+                        }
+                        ctx.globalAlpha = 1.0;
+                    }
+                });
+            }
         }
 
         function spawnEnemies(health,speed,size,type) {
@@ -518,7 +541,10 @@
                     boss: 0,
                     type: type,
                     rotate: 0,
-                    alpha: 1
+                    alpha: 0.99999,
+                    ySpeed: 0,
+                    xSpeed: 0,
+                    yAddSpeed: 0
                 };
 
                 // 碰撞检测
@@ -538,11 +564,11 @@
         function drawBarriers() {
             barriers.forEach(barrier => {
                 // 绘制左侧区域
-                ctx.fillStyle = barrier.leftValue >= 0 ? '#0f0' : '#f00';
+                ctx.fillStyle = barrier.leftValue >= 0 ? 'rgba(0,255,0,50%)' : 'rgba(255,0,0,50%)';
                 ctx.fillRect(0, barrier.y, canvas.width/2, 20);
                 
                 // 绘制右侧区域
-                ctx.fillStyle = barrier.rightValue >= 0 ? '#0f0' : '#f00';
+                ctx.fillStyle = barrier.rightValue >= 0 ? 'rgba(0,255,0,50%)' : 'rgba(255,0,0,50%)';
                 ctx.fillRect(canvas.width/2, barrier.y, canvas.width/2, 20);
 
                 // 绘制隔断
@@ -596,7 +622,8 @@
                     }
 
                     // 令人忍俊不禁的碰撞检测，主要是为了子弹穿透效果包的饺子(
-                    if(enemy.health>0 &&
+                    if( bullet.y>-2 &&
+                        enemy.health>0 &&
                         bullet.x - enemy.x < enemy.size + bullet.width +r &&
                         enemy.x - bullet.x < enemy.size + bullet.width +l &&
                         bullet.y <= enemy.y + enemy.size + bullet.width &&
@@ -608,8 +635,9 @@
                           enemy.health -= bullet.damage * player.damage;
                         }
                         
+                        //没错，受伤抖动幅度甚至和敌人剩余血量有关
                         if (Math.abs(enemy.rotate)<0.5){
-                            const rotateA = 100/enemy.size * (Math.random()+0.5);
+                            const rotateA = Math.min(30,5+40/(enemy.size) * (Math.random()+(enemy.maxHealth/enemy.health)**1.5));
                             enemy.rotate = Math.random()>0.5?rotateA:-rotateA;
                         }
                         
@@ -634,9 +662,21 @@
             enemies.forEach((enemy, eIndex) => {
                 if (enemy.health < 0.05) {
                     enemy.health=0;
-                    enemy.alpha /= 2 ** (deltaTime / 16.667);
+                    enemy.alpha = Math.max(0.01,(enemy.alpha-0.03));
+                    //没错，敌人死亡后的抛物线甚至和子弹速度有关
+                    if (enemy.yAddSpeed == 0){
+                        enemy.ySpeed = -(player.bulletSpeed**0.5*(Math.random()/3+1.1))-7;
+                        enemy.yAddSpeed = 0.98/1.5;    //地心引力.jpg
+                        enemy.xSpeed = (enemy.x<canvas.width/2?-1:1)*((Math.random()+0.5)*(player.bulletSpeed**0.5)+1);
+                        enemy.rotate = 0;
+                    }else{
+                        enemy.x+=enemy.xSpeed* (deltaTime / 16.667);
+                        enemy.y+=enemy.ySpeed* (deltaTime / 16.667);
+                        enemy.ySpeed+=enemy.yAddSpeed* (deltaTime / 16.667);
+                        enemy.rotate+=enemy.xSpeed* (deltaTime / 16.667)*2;
+                    }
                 }
-                if (enemy.health == 0 && enemy.alpha <= 0.001) {
+                if (enemy.health == 0 && (enemy.alpha <= 0.001 || enemy.type >= 1)) {
                     enemiesToRemove.add(eIndex);
                     if (enemy.boss == 1){
                         score += 30;
@@ -663,21 +703,29 @@
         // 游戏界面
         function drawUI() {
             ctx.fillStyle = '#fff';
-            ctx.font = '20px Arial';
-            ctx.fillText(`分数: ${score}`, 50, 30);
-            //  ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 50, 120);
-            //  ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 50, 90);
-            ctx.fillText(`时间: ${(gameTime)}`, 50, 60);
-            //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 120, 150);
-            //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 50, 180);
-            //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 50, 210);
-            //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 50, 240);
-            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 50, 270);
-            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 50, 300);
-            //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 50, 330);
-            //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 50, 360);
-            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 50, 390);
-            //  ctx.fillText(`d: ${(difficulty)}`, 50, 420);
+            ctx.textAlign = 'left';
+            ctx.font = '20px Jellee';
+            // ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+            // ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 5;
+            ctx.strokeText(`Score: ${score}`, 10, 30);
+            ctx.fillText(`Score: ${score}`, 10, 30);
+            ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
+            ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
+            ctx.strokeStyle = 'rgba(255,255,255,0)';
+            //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+            //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+            //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+            //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+            //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+            //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+            //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+            //  ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
+            ctx.textAlign = 'center';
 
             ctx.stroke();
             if(gameOver) {
@@ -786,11 +834,11 @@
             }
             
             // 更新游戏对象
+            increaseDifficulty();
             updateBullets();
             updateEnemies();
             updateBarriers();
             checkCollisions();
-            increaseDifficulty();
             
             // 绘制所有元素
             drawBullets();
@@ -799,9 +847,10 @@
             drawBarriers();
             drawUI();
             let frameRate = 1000 / deltaTime;
+            ctx.textAlign = 'right';
             ctx.fillStyle = '#888';
-            ctx.fillText(`FPS: ${frameRate.toFixed(1)}`, canvas.width-60, 30);
-
+            ctx.fillText(`FPS: ${frameRate.toFixed(1)}`, canvas.width-10, 30);
+            ctx.textAlign = 'center';
             requestAnimationFrame(gameLoop);
 
             
@@ -820,7 +869,7 @@
             ctx.fillRect(5, canvas.height-25, canvas.width*player.health/player.maxHealth-10, 19);
 
             ctx.fillStyle = '#fff';
-            ctx.font = '15px Impact';
+            ctx.font = '15px Jellee';
             ctx.fillText(` ${player.health.toFixed(1)} / ${player.maxHealth.toFixed(1)}`, canvas.width/2,canvas.height-11);
 
             ctx.fillStyle = '#00f';
@@ -1118,7 +1167,10 @@
                         boss: 1,
                         type: 0,
                         rotate: 0,
-                        alpha: 1
+                        alpha: 0.99999,
+                        ySpeed: 0,
+                        xSpeed: 0,
+                        yAddSpeed: 0
                     };
 
                     if(!checkEnemyCollision(newEnemy)){
