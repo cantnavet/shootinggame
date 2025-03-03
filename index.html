@@ -7,6 +7,7 @@
         body {
             margin: 0;
             overflow: hidden;
+            font-family: 'Impact', 'Arial Black', sans-serif;
         }
         canvas { border: 1px solid white }
         canvas {
@@ -66,7 +67,6 @@
                style="vertical-align: middle; width: 100px;">
         <span id="speedValue">1x</span>
     </div>
-    <button onclick="test()">触发动画</button>
     
     <br>
     <!-- <button id="left" style="width: 300px; height: 100px;">←</button>
@@ -137,7 +137,6 @@
         let stopTime;
         let lastSec = 0;
         let mouseX = canvas.width/2;
-        let lastDelta;
         let scale;
         let difficultyApplyed;
         let noFireRate; //连续出现无攻速加成的次数
@@ -262,7 +261,6 @@
             lastFire = Date.now();
             mouseX = canvas.width/2;  
             restartBtn.style.display = 'none';
-            lastDelta = 0;
             difficultyApplyed = false;
             noFireRate = 0;
             difficulty = 1;
@@ -355,29 +353,32 @@
             }
 
             // 更新敌人位置 + 受伤特效
+            
             enemies = enemies.filter(enemy => {
-                enemy.y += enemy.speed* (deltaTime / 8.335)* (timeScale);
-                if (Math.abs(enemy.rotate)>0){
-                    if (Math.abs(enemy.rotate)<0.001){
-                        enemy.rotate=0;
+                if (enemy.health>0){
+                    enemy.y += enemy.speed* (deltaTime / 8.335)* (timeScale);
+                    if (Math.abs(enemy.rotate)>0){
+                        if (Math.abs(enemy.rotate)<0.001){
+                            enemy.rotate=0;
+                        }
+                        enemy.rotate /= 1.5 ** (deltaTime / 16.667); 
                     }
-                    enemy.rotate /= 1.5; 
-                }
-                // 扣血+失败条件
-                if(enemy.y + enemy.size >= player.y && enemy.type===0) {
-                    if (enemy.boss == 1){
-                        player.health-=3;
-                    }else{
-                        if (enemy.speed>fillSpeedBase*2){
-                            player.health-=0.5
+                    // 扣血+失败条件
+                    if(enemy.y + enemy.size >= player.y && enemy.type===0) {
+                        if (enemy.boss == 1){
+                            player.health-=3;
                         }else{
-                            player.health--;
-                        }  
+                            if (enemy.speed>fillSpeedBase*2){
+                                player.health-=0.5
+                            }else{
+                                player.health--;
+                            }  
+                        }
+                        if (player.health <= 0){
+                            gameOver = true;
+                        }
+                        enemy.y = 99999;
                     }
-                    if (player.health <= 0){
-                        gameOver = true;
-                    }
-                    enemy.y = 99999;
                 }
                 return enemy.y < canvas.height;
             });
@@ -633,7 +634,7 @@
             enemies.forEach((enemy, eIndex) => {
                 if (enemy.health < 0.05) {
                     enemy.health=0;
-                    enemy.alpha /= 2;
+                    enemy.alpha /= 2 ** (deltaTime / 16.667);
                 }
                 if (enemy.health == 0 && enemy.alpha <= 0.001) {
                     enemiesToRemove.add(eIndex);
@@ -664,19 +665,19 @@
             ctx.fillStyle = '#fff';
             ctx.font = '20px Arial';
             ctx.fillText(`分数: ${score}`, 50, 30);
-              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 50, 120);
-              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 50, 90);
+            //  ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 50, 120);
+            //  ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 50, 90);
             ctx.fillText(`时间: ${(gameTime)}`, 50, 60);
-              ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 120, 150);
-              ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 50, 180);
-              ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 50, 210);
-              ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 50, 240);
-              ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 50, 270);
-              ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 50, 300);
-              ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 50, 330);
-              ctx.fillText(`at: ${(player.at.toFixed(4))}`, 50, 360);
-              ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 50, 390);
-              ctx.fillText(`d: ${(difficulty)}`, 50, 420);
+            //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 120, 150);
+            //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 50, 180);
+            //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 50, 210);
+            //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 50, 240);
+            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 50, 270);
+            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 50, 300);
+            //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 50, 330);
+            //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 50, 360);
+            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 50, 390);
+            //  ctx.fillText(`d: ${(difficulty)}`, 50, 420);
 
             ctx.stroke();
             if(gameOver) {
@@ -745,8 +746,8 @@
             }
 
             if (player.at>0.0001){
-                player.at/=1.05;
-                player.ar*=1.2;
+                player.at/=1.05**(deltaTime / 16.667);
+                player.ar*=1.2**(deltaTime / 16.667);
             }
             
             deltaTime = currentTime - lastFrameTime;
@@ -783,7 +784,7 @@
                 }
                 lastFire += fires * player.fireRate / timeScale;
             }
-
+            
             // 更新游戏对象
             updateBullets();
             updateEnemies();
@@ -797,9 +798,13 @@
             drawEnemies();
             drawBarriers();
             drawUI();
+            let frameRate = 1000 / deltaTime;
+            ctx.fillStyle = '#888';
+            ctx.fillText(`FPS: ${frameRate.toFixed(1)}`, canvas.width-60, 30);
 
-            lastDelta = deltaTime;
-            setTimeout(gameLoop, 16.667);
+            requestAnimationFrame(gameLoop);
+
+            
        }
 
         // 玩家绘制
