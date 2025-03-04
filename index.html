@@ -85,10 +85,10 @@
         const ctx = canvas.getContext('2d');
         const restartBtn = document.getElementById('restartBtn');
 
-        //伏笔，后面要考
-        const damageTypes =[1.5,200,70000,20000000,7000000000,1000000000000];
+        const damageTypes =[2,200,70000,20000000,8000000000,2000000000000];
+        const Maxbullets = [35,30,25,20,15,6];
         const XTypes =[1,2,3,4,5,6];
-        const upgradeSpawnTime =[400,800,1200,1600,2000,99999999];
+        const upgradeSpawnTime =[200,400,600,800,1000,99999999];
         const colors =['#ffffff','#ffffff','#ffff00','#888888','#00ffff','#000000'];
         const barrierColor1 = [];
         const barrierColor2 = [];
@@ -127,7 +127,6 @@
         let gameTime;
         let deltaTime;
         let lastFrameTime = Date.now();
-        const Maxbullets = [35,30,25,20,15,6];
         const minFrameTime = 1000 / 60; 
         let enemiesSizeBase = 15;
         let fallSpeedBase = 0.7;
@@ -221,8 +220,8 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 5,
-                maxHealth: 5,
+                health: 9999,
+                maxHealth: 9999,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
@@ -265,7 +264,7 @@
             enemyHealthBase = 3;
             enemyHealthRate = 1.45;
             enemySpawnRate = 2000;
-            fillSpeedBase = 0.7
+            fallSpeedBase = 0.7;    //你敢相信我都快写完了，才发现这里是fill而不是fall?
             lastFire = Date.now();
             mouseX = canvas.width/2;  
             restartBtn.style.display = 'none';
@@ -349,14 +348,14 @@
         function updateEnemies() {
             // 生成敌人
             if((gameTime%15<=10) && (Date.now() - enemySpawnTimer > enemySpawnRate/timeScale)) {
-                spawnEnemies(enemyHealthBase,fillSpeedBase,enemiesSizeBase,0);
-                // spawnEnemies(enemyHealthBase*6,fillSpeedBase*1.4,enemiesSizeBase*1.2,player.bulletType);
-                if (Math.random()<0.1 && gameTime>40 && 1+Math.log(enemyHealthBase)/4-difficulty>0.05)  spawnEnemies(enemyHealthBase/1.5,fillSpeedBase*2.5,enemiesSizeBase/1.5,0);
+                spawnEnemies(enemyHealthBase,fallSpeedBase,enemiesSizeBase,0);
+                // spawnEnemies(enemyHealthBase*6,fallSpeedBase*1.4,enemiesSizeBase*1.2,player.bulletType);
+                if (Math.random()<0.1 && gameTime>40 && 1+Math.log(enemyHealthBase)/4-difficulty>0.05)  spawnEnemies(enemyHealthBase/1.5,fallSpeedBase*2.5,enemiesSizeBase/1.5,0);
                 enemySpawnTimer = Date.now();
             }
 
-            if (gameTime>=bulletTypeSpawnTimeBase(player.bulletType) && gameTime - upgradeSpawnTimer > 25){
-                spawnEnemies(enemyHealthBase*6,fillSpeedBase*1.4,enemiesSizeBase*1.2,player.bulletType);
+            if (gameTime>=bulletTypeSpawnTimeBase(player.bulletType) && gameTime - upgradeSpawnTimer > 15){
+                spawnEnemies(enemyHealthBase*6,fallSpeedBase*1.4,enemiesSizeBase*1.2,player.bulletType);
                 upgradeSpawnTimer = gameTime;
             }
 
@@ -376,7 +375,7 @@
                         if (enemy.boss == 1){
                             player.health-=3;
                         }else{
-                            if (enemy.speed>fillSpeedBase*2){
+                            if (enemy.speed>fallSpeedBase*2){
                                 player.health-=0.5
                             }else{
                                 player.health--;
@@ -435,7 +434,7 @@
         // 优先保证高速敌人在最上面，其次保证靠前的敌人在最上面
         function drawEnemies() {
             const healthTextColor = ['#f00','#fff','#0ff'];
-            const enemySpeeds = [0,fillSpeedBase/2.5, fillSpeedBase*1.2, 114514];
+            const enemySpeeds = [0,fallSpeedBase/2.5, fallSpeedBase*1.2, 114514];
             for (let i = 0; i < 3; i++) {
                 Array.from(enemies).reverse().forEach(enemy => {
                     if (enemy.speed < enemySpeeds[i+1] && enemy.speed > enemySpeeds[i]){
@@ -566,41 +565,58 @@
         function drawBarriers() {
             barriers.forEach(barrier => {
                 // 绘制左侧区域
-                ctx.fillStyle = barrier.leftValue >= 0 ? 'rgba(0,255,0,50%)' : 'rgba(255,0,0,50%)';
-                ctx.fillRect(0, barrier.y, canvas.width/2, 20);
+                ctx.fillStyle = barrier.leftValue >= 0 ? 'rgba(0,255,0,40%)' : 'rgba(255,0,0,40%)';
+                ctx.fillRect(0, barrier.y, barrier.lw, 40);
                 
+                // 绘制中间区域
+                ctx.fillStyle = barrier.midValue >= 0 ? 'rgba(0,255,0,40%)' : 'rgba(255,0,0,40%)';
+                ctx.fillRect(barrier.lw, barrier.y, barrier.rw-barrier.lw, 40);
+
                 // 绘制右侧区域
-                ctx.fillStyle = barrier.rightValue >= 0 ? 'rgba(0,255,0,50%)' : 'rgba(255,0,0,50%)';
-                ctx.fillRect(canvas.width/2, barrier.y, canvas.width/2, 20);
+                ctx.fillStyle = barrier.rightValue >= 0 ? 'rgba(0,255,0,40%)' : 'rgba(255,0,0,40%)';
+                ctx.fillRect(barrier.rw, barrier.y, canvas.width-barrier.rw, 40);
 
                 // 绘制隔断
                 ctx.fillStyle = '#000';
-                ctx.fillRect(canvas.width/2-2, barrier.y, 4, 20);
+                ctx.fillRect(barrier.lw-2, barrier.y, 4, 40);
+                ctx.fillRect(barrier.rw-2, barrier.y, 4, 40);
                 
                 // 显示数值
                 ctx.fillStyle = '#000';
-                ctx.font = '12px Arial';
+                ctx.font = '15px Arial';
                 if (barrier.leftValue > 0){
                     ctx.fillText(
                         `${barrier.typel}: +${barrier.leftValue.toFixed(1)}`, 
-                        canvas.width/4, barrier.y + 15
+                        barrier.lw/2, barrier.y + 25
                     );
                 }else{
                     ctx.fillText(
                         `${barrier.typel}: ${barrier.leftValue.toFixed(1)}`, 
-                        canvas.width/4, barrier.y + 15
+                        barrier.lw/2, barrier.y + 25
+                    );
+                }
+
+                if (barrier.midValue > 0){
+                    ctx.fillText(
+                        `${barrier.typem}: +${barrier.midValue.toFixed(1)}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 25
+                    );
+                }else{
+                    ctx.fillText(
+                        `${barrier.typem}: ${barrier.midValue.toFixed(1)}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 25
                     );
                 }
 
                 if (barrier.rightValue > 0){
                     ctx.fillText(
                         `${barrier.typer}: +${barrier.rightValue.toFixed(1)}`, 
-                        canvas.width*3/4 + 10, barrier.y + 15
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 25
                     );
                 }else{
                     ctx.fillText(
                         `${barrier.typer}: ${barrier.rightValue.toFixed(1)}`, 
-                        canvas.width*3/4 + 10, barrier.y + 15
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 25
                     );
                 }
             });
@@ -631,8 +647,10 @@
                         bullet.y <= enemy.y + enemy.size + bullet.width &&
                         bullet.y > enemy.y + enemy.size + bullet.width - bullet.speed* (deltaTime / 8.335)*timeScale - enemy.speed* (deltaTime / 8.335)*timeScale
                     ){
+                        // 其实，如果你不小心错过了第一个升级，游戏会给你偷偷上一个临时的伤害加成，不然你完全不可能赶上怪物的血量增长速度(
                         if (gameTime > bulletTypeSpawnTimeBase(player.bulletType)){
-                            enemy.health -= (bullet.damage * player.damage)*1.145**((gameTime-bulletTypeSpawnTimeBase(player.bulletType))/10);
+                            enemy.health -= (bullet.damage * player.damage)*1.14514**((gameTime-bulletTypeSpawnTimeBase(player.bulletType))/10);
+                            enemy.health -= (bullet.damage * player.damage)*1.14514**((gameTime-bulletTypeSpawnTimeBase(player.bulletType))/10);
                         }else{
                           enemy.health -= bullet.damage * player.damage;
                         }
@@ -671,6 +689,11 @@
                         enemy.yAddSpeed = 0.98/1.5;    //地心引力.jpg
                         enemy.xSpeed = (enemy.x<canvas.width/2?-1:1)*((Math.random()+0.5)*(player.bulletSpeed**0.5)+3);
                         enemy.rotate = 0;
+                        if (enemy.boss == 1){
+                            score += 30;
+                        }else{
+                            score += 10;
+                        }
                     }else{
                         enemy.x+=enemy.xSpeed* (deltaTime / 16.667);
                         enemy.y+=enemy.ySpeed* (deltaTime / 16.667);
@@ -707,8 +730,8 @@
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'left';
             ctx.font = '20px Jellee';
-             // ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
-             // ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.strokeText(`Score: ${score}`, 10, 30);
@@ -716,17 +739,17 @@
             ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
             ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
             ctx.strokeStyle = 'rgba(255,255,255,0)';
-             // ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-             // ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-             // ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-             // ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-             // ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-             // ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-            //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-            //  ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
+              ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+              ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+              ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+              ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+              ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+              ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+              ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+              ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+              ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+              ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+              ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
             ctx.textAlign = 'center';
 
             ctx.stroke();
@@ -789,7 +812,7 @@
                 bossSpawn();
                 if (player.bulletType==1){
                     if (gameTime<=20){
-                        player.fireRate/=1.04;
+                        player.fireRate/=1.07;
                         player.bulletSpeed = Math.min(5,player.bulletSpeed*1.05);
                     }
                 }
@@ -981,7 +1004,7 @@
                 if(possible > MAX_BULLETS) continue;
                 weights.push({
                     value: i,
-                    weight: 1/(i**3) // 权重衰减，越多的弹道越难生成，所以出现弹道+5的概率至少是1/125
+                    weight: 1/(i**4) // 权重衰减，越多的弹道越难生成，所以出现弹道+5的概率至少是1/125
                 });
             }
             
@@ -991,7 +1014,7 @@
             let random = Math.random() * totalWeight;
             
             for(const w of weights){
-                if(random < w.weight) return w.value;
+                if(random < w.weight) return w.value * 2 - Math.floor(Math.random()+0.8);
                 random -= w.weight;
             }
             return 1;
@@ -1002,55 +1025,79 @@
             if(gameTime%5 ===0 && barrierCD === false) {
                 let firstV = generateBulletPaths(player.bulletCount);
                 let secV = generateBulletPaths(player.bulletCount);
+                let thirdV = generateBulletPaths(player.bulletCount);
                 let ltypes = '弹道';
+                let mtypes = '弹道';
                 let rtypes = '弹道';
 
                 // 十分激烈的概率计算
                 bulletWeight = 1.5*(0.5+(20*player.bulletCount/Maxbullets[player.bulletType-1])**(0.7)/4);
-                if (gameTime>bulletTypeSpawnTimeBase(player.bulletType)-100 && player.bulletCount < Maxbullets[player.bulletType-1]/2) bulletWeight /=3;
-                if (gameTime>20 && gameTime<400 && player.bulletCount < 2) bulletWeight /=3;
-                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.1 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                if (gameTime>bulletTypeSpawnTimeBase(player.bulletType)-50 && player.bulletCount < Maxbullets[player.bulletType-1]/2) bulletWeight /=3;
+                if (gameTime>20 && gameTime<200 && player.bulletCount < 2) bulletWeight /=3;
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
                     firstV = 2*(Math.random()*5 - 3);
                     ltypes = '攻速';
                     if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
                         ltypes = '伤害';
-                        firstV *= enemyHealthBase/5/damageDe;
+                        firstV *= enemyHealthBase/3/damageDe;
                         firstV += firstV>=0?0.5:-0.5;
                     }else{
-                        firstV += firstV>=0?0.3:-0.3;
+                        firstV += firstV>=0?1:-1;
                     }
                 }
-                if((noFireRate>=5 && player.fireRate > 5) || Math.random()*bulletWeight > 0.1 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
                     secV = 2*(Math.random()*5 - 3);
+                    mtypes = '攻速';
+                    if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
+                        mtypes = '伤害';
+                        secV *= enemyHealthBase/3/damageDe;
+                        secV += secV>=0?0.5:-0.5;
+                    }else{
+                        secV += secV>=0?1:-1;
+                    }
+                }
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                    thirdV = 2*(Math.random()*5 - 3);
                     rtypes = '攻速';
                     if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
                         rtypes = '伤害';
-                        secV *= enemyHealthBase/5/damageDe;
-                        secV += secV>=0?0.5:-0.5;
+                        thirdV *= enemyHealthBase/3/damageDe;
+                        thirdV += thirdV>=0?0.5:-0.5;
                     }else{
-                        secV += secV>=0?0.3:-0.3;
+                        thirdV += thirdV>=0?1:-1;
                     }
                 }
 
-                if(Math.random()>0.5){
-                    if (firstV<0 && secV<0) firstV = -firstV;
+                if(Math.random()<1/3){
+                    if (firstV<0 && secV<0 && thirdV<0) firstV = -firstV;
+                }else if(Math.random()<1/2){    //你能第一时间察觉出，为什么上面是1/3，而这里是1/2吗？
+                    if (firstV<0 && secV<0 && thirdV<0) secV = -secV;
                 }else{
-                    if (firstV<0 && secV<0) secV = -secV;
+                    if (firstV<0 && secV<0 && thirdV<0) thirdV = -thirdV;
                 }
 
-                if ((firstV<=0 || ltypes !== '攻速') && (secV<=0 || rtypes !== '攻速')){
+                if ((firstV<=0 || ltypes !== '攻速') && (secV<=0 || mtypes !== '攻速') && (thirdV<=0 || rtypes !== '攻速')){
                     noFireRate++;
                 }else{
                     noFireRate = 0;
                 }
 
+                if (ltypes == '伤害') firstV *=2;
+                if (mtypes == '伤害') secV *=2;
+                if (rtypes == '伤害') thirdV *=2;
 
+                const lWall = Math.random()*7/10*canvas.width+canvas.width/10; 
+                const rWall = Math.random()*(canvas.width-lWall-2*canvas.width/10)+lWall+canvas.width/10;
                 barriers.push({
                     y: 0,
                     leftValue: firstV,  
-                    rightValue: secV,
+                    midValue: secV,
+                    rightValue: thirdV,
                     typel: ltypes,
-                    typer: rtypes
+                    typem: mtypes,
+                    typer: rtypes,
+                    lw: lWall,
+                    rw: rWall
                 });
 
 
@@ -1063,8 +1110,8 @@
             // 记录到底的屏障以供移除
             const barriersToRemove = [];
             barriers.forEach(barrier => {
-                barrier.y += fallSpeedBase* (deltaTime / 8.335) * timeScale;
-                if(barrier.y + 20 >= player.y) {
+                barrier.y += ((fallSpeedBase**1/2)* (deltaTime / 8.335)+0.5) * timeScale;
+                if(barrier.y + 40 >= player.y) {
                     applyUpgrade(barrier);
                     barriersToRemove.push(barrier);
                 }
@@ -1074,19 +1121,25 @@
 
         // 屏障碰到玩家所应用的加成
         function applyUpgrade(barrier) {
-            const area = player.x < canvas.width/2 ? 'leftValue' : 'rightValue';
-            const types = barrier[(player.x < canvas.width/2 ? 'typel' : 'typer')];
+            let area;
+            let typeI;
+            if (player.x < barrier.lw){
+                area = 'leftValue';
+                typeI = 'typel';
+            }else if (player.x < barrier.rw){
+                area = 'midValue';
+                typeI = 'typem';
+            }else{
+                area = 'rightValue';
+                typeI = 'typer';
+            }
+            const types = barrier[typeI];
             const value = barrier[area];
             
             switch(types) {
                 case '攻速':
                     if (player.fireRate >= player.fireLim ){
-                        player.fireRate = Math.max(player.fireLim, player.fireRate - (0.5+value*player.fireRate/15));
-                        // if (player.fireRate - value*50 < 100){
-                        //     player.fireRate = Math.max(1, player.fireRate - Math.floor(value*player.fireRate/10));
-                        // }else{
-                        //     player.fireRate = Math.max(1, player.fireRate - value*50);
-                        // }
+                        player.fireRate = Math.max(player.fireLim, player.fireRate/=value/10+1);
                     }else{
                         player.damage += value*enemyHealthBase/5/damageDe;
                     }
@@ -1126,7 +1179,7 @@
             if(gameTime%10 === 0 && !difficultyApplyed) {
                 
                 difficultyApplyed = true;
-                if (gameTime>=2200){
+                if (gameTime>=1100){
                     damageDe *= 1.02;
                 }else{
                     damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
@@ -1135,8 +1188,20 @@
                 enemyHealthBase *= enemyHealthRate;
                 enemySpawnRate = Math.max(50, enemySpawnRate*1/(0.945+1/((gameTime**0.22*2.5))));
                 enemiesSizeBase = Math.min(35,enemiesSizeBase*1.05);
-                fillSpeedBase = Math.min(2.5,fillSpeedBase+0.02);
+                fallSpeedBase = Math.min(2.5,fallSpeedBase+0.02);
                 kickbackDistance = Math.max(0.06/1.25**(player.bulletType-1),kickbackDistance*0.9);
+                if (gameTime>=1100){
+                    damageDe *= 1.02;
+                }else{
+                    damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
+                }
+                enemyHealthRate = Math.max(1.2,enemyHealthRate/1.008);
+                enemyHealthBase *= enemyHealthRate;
+                enemySpawnRate = Math.max(50, enemySpawnRate*1/(0.945+1/(((gameTime+10)**0.22*2.5))));
+                enemiesSizeBase = Math.min(35,enemiesSizeBase*1.05);
+                fallSpeedBase = Math.min(2.5,fallSpeedBase+0.02);
+                kickbackDistance = Math.max(0.06/1.25**(player.bulletType-1),kickbackDistance*0.9);
+
                 const nowD = Math.min(MaxD,1+Math.floor(Math.log(enemyHealthBase)/4));
 
                 if (difficulty !== nowD){
@@ -1164,7 +1229,7 @@
                         y: -105,
                         health: enemyHealthBase*10*Math.log(gameTime**(1/2)),
                         size: enemiesSizeBase*3, 
-                        speed: fillSpeedBase/3.5,
+                        speed: fallSpeedBase/3.5,
                         maxHealth: enemyHealthBase*10*Math.log(gameTime**(1/2)),
                         boss: 1,
                         type: 0,
