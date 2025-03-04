@@ -75,9 +75,9 @@
     </div>
     <div style="color: white; margin-top: 10px;">
         画质: 
-        <input type="range" id="speedRange2" min="0" max="2" step="1" value="2" 
+        <input type="range" id="speedRange2" min="0" max="3" step="1" value="3" 
                style="vertical-align: middle; width: 100px;">
-        <span id="speedValue2">2</span>
+        <span id="speedValue2">3</span>
         <span style="color: gray; font-size: 12px;">(掉帧严重请适当调低)</span>
     </div>
     
@@ -168,7 +168,7 @@
 
         const speedRange2 = document.getElementById('speedRange2');
         speedRange2.addEventListener('input', function() {
-            quality = 2-parseInt(this.value);
+            quality = 3-parseInt(this.value);
             document.getElementById('speedValue2').textContent = this.value;
         });
 
@@ -361,7 +361,7 @@
                 if (rightBullets.length) {
                     rightBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].right, b.x-8, b.y-5));
                 }
-            }else{
+            }else if (quality === 2) {
                 
                 bullets.forEach(b => {
                     ctx.fillStyle = colors[b.type-1];
@@ -476,17 +476,26 @@
                             if (quality===0){
                                 // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
                                 ctx.beginPath();
-                                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
-                                ctx.shadowOffsetX = 0; 
-                                ctx.shadowOffsetY = enemy.size**0.5; 
-                                ctx.shadowBlur = 12; 
+                                
+                                if (i!==1 && enemy.health>0){
+                                    ctx.shadowColor = healthTextColor[i];
+                                    ctx.shadowOffsetX = 0; 
+                                    ctx.shadowOffsetY = 0; 
+                                    ctx.shadowBlur = 12;  
+                                }else{
+                                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                                    ctx.shadowOffsetX = 0; 
+                                    ctx.shadowOffsetY = enemy.size**0.5; 
+                                    ctx.shadowBlur = 12; 
+                                }
+                                
                                 ctx.globalAlpha = enemy.alpha;
                                 ctx.save();
                                 // 做了半天才发现translate函数be like:
                                 ctx.globalAlpha = 1;
                                 ctx.translate(enemy.x, enemy.y);
                                 ctx.rotate(enemy.rotate * Math.PI / 180); 
-                                if (i!==1 && enemy.health>0) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
+                                // if (i!==1 && enemy.health>0) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
                                 ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
                                 ctx.globalAlpha = enemy.alpha;
                                 drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
@@ -504,11 +513,23 @@
                             }
                         }else{
                             ctx.beginPath();
-                            if (quality===0) ctx.filter = 'drop-shadow(0px 0px 5px '+bulletColor(enemy.type+1)+')';
+                            if (quality===0) {
+                                ctx.shadowColor = bulletColor(enemy.type+1);
+                                ctx.shadowOffsetX = 0; 
+                                ctx.shadowOffsetY = 0; 
+                                ctx.shadowBlur = 12; 
+                            }
+                            //if (quality===0) ctx.filter = 'drop-shadow(0px 0px 5px '++')';
                             // ctx.fillRect(enemy.x-enemy.size, enemy.y-enemy.size,enemy.size*2,enemy.size*2);
                             // 十分激烈的坐标转换
                             ctx.drawImage(bTypes[player.bulletType], enemy.x-enemy.size-enemy.size/8, enemy.y-enemy.size+enemy.size/8, 16/7*enemy.size,16/7*enemy.size);
-                            ctx.filter = 'none';
+                            if (quality===0) {
+                                ctx.shadowColor = 'transparent';
+                                ctx.shadowOffsetX = 0;
+                                ctx.shadowOffsetY = 0;
+                                ctx.shadowBlur = 0;
+                                ctx.filter = 'none';
+                            }
                         }
                         
                         if (enemy.health>0){
