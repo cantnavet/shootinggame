@@ -69,7 +69,7 @@
     </span>
     <div style="color: white; margin-top: 10px;">
         游戏倍速: 
-        <input type="range" id="speedRange" min="1" max="1" step="0.5" value="1" 
+        <input type="range" id="speedRange" min="1" max="15" step="0.5" value="1" 
                style="vertical-align: middle; width: 100px;">
         <span id="speedValue">1x</span>
     </div>
@@ -86,7 +86,7 @@
         const restartBtn = document.getElementById('restartBtn');
 
         //伏笔，后面要考
-        const damageTypes =[1.5,200,60000,20000000,6000000000,1000000000000];
+        const damageTypes =[1.5,200,70000,20000000,7000000000,1000000000000];
         const XTypes =[1,2,3,4,5,6];
         const upgradeSpawnTime =[400,800,1200,1600,2000,99999999];
         const colors =['#ffffff','#ffffff','#ffff00','#888888','#00ffff','#000000'];
@@ -434,6 +434,7 @@
         // 敌人绘制
         // 优先保证高速敌人在最上面，其次保证靠前的敌人在最上面
         function drawEnemies() {
+            const healthTextColor = ['#f00','#fff','#0ff'];
             const enemySpeeds = [0,fillSpeedBase/2.5, fillSpeedBase*1.2, 114514];
             for (let i = 0; i < 3; i++) {
                 Array.from(enemies).reverse().forEach(enemy => {
@@ -463,7 +464,7 @@
                             ctx.translate(enemy.x, enemy.y);
                             ctx.rotate(enemy.rotate * Math.PI / 180); 
                             // 小鬼警报系统() 
-                            if (i==2 && enemy.health>0 && enemy.y >canvas.height/2.6) ctx.filter = 'drop-shadow(0px 0px '+Math.min(5,(enemy.y-canvas.height/2.6)/5)+'px #f00)';      
+                            if (i!==1 && enemy.health>0) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
                             ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
                             ctx.globalAlpha = enemy.alpha;
                             drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
@@ -502,6 +503,7 @@
                                 ctx.fillRect(enemy.x - 18, enemy.y - 8 - enemy.size, healthWidth, 2);
                             }else{
                                 ctx.fillRect(enemy.x - 38, enemy.y - 8 - enemy.size, healthWidth*2, 2);
+                                
                             }
 
                             // 显示血量数值
@@ -514,7 +516,7 @@
                             ctx.strokeText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
                             ctx.strokeStyle = 'rgba(255,255,255,0)';
 
-                            ctx.fillStyle = '#FFF';
+                            ctx.fillStyle = healthTextColor[i];
                             ctx.fillText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
                             //});
                         }
@@ -667,7 +669,7 @@
                     if (enemy.yAddSpeed == 0){
                         enemy.ySpeed = -(player.bulletSpeed**0.5*(Math.random()/3+1.1))-7;
                         enemy.yAddSpeed = 0.98/1.5;    //地心引力.jpg
-                        enemy.xSpeed = (enemy.x<canvas.width/2?-1:1)*((Math.random()+0.5)*(player.bulletSpeed**0.5)+1);
+                        enemy.xSpeed = (enemy.x<canvas.width/2?-1:1)*((Math.random()+0.5)*(player.bulletSpeed**0.5)+3);
                         enemy.rotate = 0;
                     }else{
                         enemy.x+=enemy.xSpeed* (deltaTime / 16.667);
@@ -705,8 +707,8 @@
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'left';
             ctx.font = '20px Jellee';
-            // ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
-            // ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.strokeText(`Score: ${score}`, 10, 30);
@@ -714,17 +716,17 @@
             ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
             ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
             ctx.strokeStyle = 'rgba(255,255,255,0)';
-            //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-            //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-            //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-            //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-            //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-            //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-            //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-            //  ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
+              ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+              ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+              ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+              ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+              ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+              ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+              ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+              ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+              ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+              ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+              ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
             ctx.textAlign = 'center';
 
             ctx.stroke();
