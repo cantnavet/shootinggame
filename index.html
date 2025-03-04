@@ -221,8 +221,8 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 9999,
-                maxHealth: 9999,
+                health: 5,
+                maxHealth: 5,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
@@ -707,8 +707,8 @@
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'left';
             ctx.font = '20px Jellee';
-              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
-              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+             // ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+             // ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.strokeText(`Score: ${score}`, 10, 30);
@@ -716,17 +716,17 @@
             ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
             ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
             ctx.strokeStyle = 'rgba(255,255,255,0)';
-              ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-              ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-              ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-              ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-              ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-              ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-              ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-              ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-              ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-              ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-              ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
+             // ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+             // ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+             // ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+             // ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+             // ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+             // ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+            //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+            //  ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
             ctx.textAlign = 'center';
 
             ctx.stroke();
