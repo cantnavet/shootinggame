@@ -73,6 +73,13 @@
                style="vertical-align: middle; width: 100px;">
         <span id="speedValue">1x</span>
     </div>
+    <div style="color: white; margin-top: 10px;">
+        画质: 
+        <input type="range" id="speedRange2" min="0" max="2" step="1" value="2" 
+               style="vertical-align: middle; width: 100px;">
+        <span id="speedValue2">2</span>
+        <span style="color: gray; font-size: 12px;">(掉帧严重请适当调低)</span>
+    </div>
     
     <br>
     <!-- <button id="left" style="width: 300px; height: 100px;">←</button>
@@ -85,16 +92,18 @@
         const ctx = canvas.getContext('2d');
         const restartBtn = document.getElementById('restartBtn');
 
-        const damageTypes =[2,200,70000,20000000,8000000000,2000000000000];
+        const damageTypes =[2,200,70000,20000000,7000000000,2000000000000];
         const Maxbullets = [35,30,25,20,15,6];
         const XTypes =[1,2,3,4,5,6];
         const upgradeSpawnTime =[200,400,600,800,1000,99999999];
-        const colors =['#ffffff','#ffffff','#ffff00','#888888','#00ffff','#000000'];
-        const barrierColor1 = [];
-        const barrierColor2 = [];
-        const bulletSpeeds =[5,8,12,16,22,30];
+        const colors =['#663300','#ffffff','#ffff00','#888888','#00ffff','#000000'];
+        // 这辈子用不着的神必单位合集
+        const numberToEng =['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd', 'Ocd', 'Nod', 'VgUvg' ,'Dvg' ,'Tvg', 'Qavg', 'Qivg', 'Sxvg', 'Spvg', 'Ocvg', 'Novg', 'TgUtg', 'Dtg', 'Ttg', 'Qatg','Qitg','Sxtg','Sptg', 'Octg', 'Notg', 'QagUqag', 'Dqag' ,'Tqag', 'Qaqag' ,'QiQag' ,'SxQag', 'SpQag', 'OcQag', 'NoQag','Bruh'];
+        const bulletSpeeds =[5,8,12,16,20,25];
         const fireLims =[5,4,3.3,2.5,2,1];
         const MaxD = 11;
+        const playerImg = new Image();
+        playerImg.src = 'textures/player.png';
         var dx = new Array();
         for (i=1;i<=MaxD;i++){
             dx[i] = new Image();
@@ -118,7 +127,6 @@
 
 
         let bulletCache;
-
         let timeScale = 1;
         let bulletWeight;
         let kickbackDistance;
@@ -150,6 +158,7 @@
         let zindex1 = -1145141919;
         let zindex2 = -1145141920;
         let difficulty;
+        let quality;
 
         const speedRange = document.getElementById('speedRange');
         speedRange.addEventListener('input', function() {
@@ -157,9 +166,18 @@
             document.getElementById('speedValue').textContent = this.value + 'x';
         });
 
-        function test(){
-            player.ar=3;
-            player.at=1;
+        const speedRange2 = document.getElementById('speedRange2');
+        speedRange2.addEventListener('input', function() {
+            quality = 2-parseInt(this.value);
+            document.getElementById('speedValue2').textContent = this.value;
+        });
+
+        // 敌人太多血怎么办?
+        function formatNum(num) {
+            if (num < 1000) return num.toFixed(1);
+            const pow = Math.min(numberToEng.length-1,Math.floor(Math.log10(Math.abs(num)) / 3)); 
+            const x = num / Math.pow(1000, pow); 
+            return x.toFixed(1) + numberToEng[pow];
         }
 
         // 双重背景笑传之层层搬(
@@ -185,7 +203,7 @@
             const logicalWidth = canvas.width; 
             const logicalHeight = canvas.height; 
 
-            scale = Math.min((windowWidth-50) / logicalWidth, (windowHeight-50) / logicalHeight);
+            scale = Math.min((windowWidth-50) / logicalWidth, (windowHeight-80) / logicalHeight);
 
             canvas.style.width = `${logicalWidth * scale}px`;
             canvas.style.height = `${logicalHeight * scale}px`;
@@ -208,6 +226,7 @@
 
         
         function initGame() {
+            quality = 0;
             ctx.imageSmoothingEnabled = false; 
             player = {
                 x: canvas.width/2,
@@ -220,8 +239,8 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 9999,
-                maxHealth: 9999,
+                health: 5,
+                maxHealth: 5,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
@@ -331,6 +350,7 @@
                 // })
                 
                 // if (bullet.type>=5) ctx.stroke();
+            if (quality <= 1){
                 const leftBullets = bullets.filter(b => !b.side);
                 const rightBullets = bullets.filter(b => b.side);
                 
@@ -341,7 +361,13 @@
                 if (rightBullets.length) {
                     rightBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].right, b.x-8, b.y-5));
                 }
+            }else{
                 
+                bullets.forEach(b => {
+                    ctx.fillStyle = colors[b.type-1];
+                    ctx.fillRect(b.x, b.y, player.bulletWidth*2, player.bulletWidth*2);
+                });
+            }
 
         }
 
@@ -360,7 +386,6 @@
             }
 
             // 更新敌人位置 + 受伤特效
-            
             enemies = enemies.filter(enemy => {
                 if (enemy.health>0){
                     enemy.y += enemy.speed* (deltaTime / 8.335)* (timeScale);
@@ -399,7 +424,7 @@
             let count = 0;
 
             // 二分字体大小，猜猜看不加count会发生什么(
-            while (maxSize - minSize > 1 && count < 100) {
+            while (maxSize - minSize > 1 && count < 20) {
                 count++;
                 ctx.font = `${fontSize}px ${fontFamily}`;
                 const textWidth = ctx.measureText(text).width;
@@ -438,46 +463,48 @@
             for (let i = 0; i < 3; i++) {
                 Array.from(enemies).reverse().forEach(enemy => {
                     if (enemy.speed < enemySpeeds[i+1] && enemy.speed > enemySpeeds[i]){
-                        // 判断难度和+-
-                        const difficulty = Math.min(MaxD,1+Math.floor(Math.log(enemy.maxHealth)/4));
-                        const remain = 1+Math.log(enemy.maxHealth)/4-Math.min(MaxD,Math.floor(1+Math.log(enemy.maxHealth)/4));
+                        const difficulty = enemy.d;
                         let add = '';
-                        if (remain<1/3){
+                        if (enemy.remain<1/3){
                             add = '-';
                         }
-                        if (remain>2/3){
+                        if (enemy.remain>2/3){
                             add = '+';
                         }
                         // 绘制敌人主体
                         if (enemy.type===0){
-                            // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
-                            ctx.beginPath();
-                            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
-                            ctx.shadowOffsetX = 0; 
-                            ctx.shadowOffsetY = enemy.size**0.5; 
-                            ctx.shadowBlur = 12; 
-                            ctx.globalAlpha = enemy.alpha;
-                            ctx.save();
-                            // 做了半天才发现translate函数be like:
-                            ctx.globalAlpha = 1;
-                            ctx.translate(enemy.x, enemy.y);
-                            ctx.rotate(enemy.rotate * Math.PI / 180); 
-                            // 小鬼警报系统() 
-                            if (i!==1 && enemy.health>0) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
-                            ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
-                            ctx.globalAlpha = enemy.alpha;
-                            drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
-                            ctx.restore();
-                            // ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
-                            // ctx.fill();
-                            ctx.shadowColor = 'transparent';
-                            ctx.shadowOffsetX = 0;
-                            ctx.shadowOffsetY = 0;
-                            ctx.shadowBlur = 0;
-                            ctx.filter = 'none';
+                            if (quality===0){
+                                // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
+                                ctx.beginPath();
+                                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
+                                ctx.shadowOffsetX = 0; 
+                                ctx.shadowOffsetY = enemy.size**0.5; 
+                                ctx.shadowBlur = 12; 
+                                ctx.globalAlpha = enemy.alpha;
+                                ctx.save();
+                                // 做了半天才发现translate函数be like:
+                                ctx.globalAlpha = 1;
+                                ctx.translate(enemy.x, enemy.y);
+                                ctx.rotate(enemy.rotate * Math.PI / 180); 
+                                if (i!==1 && enemy.health>0) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
+                                ctx.drawImage(dx[difficulty], -enemy.size, -enemy.size, 2*enemy.size,2*enemy.size);
+                                ctx.globalAlpha = enemy.alpha;
+                                drawText('D'+difficulty+add, 0, 0, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
+                                ctx.restore();
+                                // ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+                                // ctx.fill();
+                                ctx.shadowColor = 'transparent';
+                                ctx.shadowOffsetX = 0;
+                                ctx.shadowOffsetY = 0;
+                                ctx.shadowBlur = 0;
+                                ctx.filter = 'none';
+                            }else{
+                                ctx.drawImage(dx[difficulty], enemy.x-enemy.size, enemy.y-enemy.size, 2*enemy.size,2*enemy.size);
+                                if (enemy.health>0) drawText('D'+difficulty+add, enemy.x, enemy.y, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
+                            }
                         }else{
                             ctx.beginPath();
-                            ctx.filter = 'drop-shadow(0px 0px 5px '+bulletColor(enemy.type+1)+')';
+                            if (quality===0) ctx.filter = 'drop-shadow(0px 0px 5px '+bulletColor(enemy.type+1)+')';
                             // ctx.fillRect(enemy.x-enemy.size, enemy.y-enemy.size,enemy.size*2,enemy.size*2);
                             // 十分激烈的坐标转换
                             ctx.drawImage(bTypes[player.bulletType], enemy.x-enemy.size-enemy.size/8, enemy.y-enemy.size+enemy.size/8, 16/7*enemy.size,16/7*enemy.size);
@@ -512,11 +539,11 @@
                             ctx.lineWidth = 3;
                             
                             ctx.strokeStyle = '#000';
-                            ctx.strokeText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
+                            ctx.strokeText(formatNum(enemy.health), enemy.x, enemy.y - 15 - enemy.size);
                             ctx.strokeStyle = 'rgba(255,255,255,0)';
 
                             ctx.fillStyle = healthTextColor[i];
-                            ctx.fillText(enemy.health.toFixed(1), enemy.x, enemy.y - 15 - enemy.size);
+                            ctx.fillText(formatNum(enemy.health), enemy.x, enemy.y - 15 - enemy.size);
                             //});
                         }
                         ctx.globalAlpha = 1.0;
@@ -526,9 +553,11 @@
         }
 
         function spawnEnemies(health,speed,size,type) {
-            const maxAttempts = 100; // 有效位最大尝试次数
+            const maxAttempts = 50; // 最大尝试次数
             let newEnemy = null;
             let isValidPosition = false;
+            const d = Math.min(MaxD,1+Math.floor(Math.log(health)/4));
+            const r =1+Math.log(health)/4-d;
             
             // 生成有效位置
             for(let i=0; i<maxAttempts; i++){
@@ -545,7 +574,9 @@
                     alpha: 0.99999,
                     ySpeed: 0,
                     xSpeed: 0,
-                    yAddSpeed: 0
+                    yAddSpeed: 0,
+                    d: d,
+                    remain: r
                 };
 
                 // 碰撞检测
@@ -556,7 +587,7 @@
             }
 
             if(!isValidPosition){
-                console.log('哥们没位了,给你随便找个地方生了(?)');
+                console.log('哥们好像没位了,给你随便找个地方生了(?)');
             }
             enemies.push(newEnemy);
         }
@@ -583,40 +614,69 @@
                 
                 // 显示数值
                 ctx.fillStyle = '#000';
-                ctx.font = '15px Arial';
+                ctx.font = '12px Arial';
+
+                // 屏障加成显示5位科学计数，但敌人血量却显示单位是有原因的(
+                const lv = Math.abs(barrier.leftValue) > 999999999999? barrier.leftValue.toExponential(5): barrier.leftValue.toFixed(1);
+                const mv = Math.abs(barrier.midValue) > 999999999999? barrier.midValue.toExponential(5): barrier.midValue.toFixed(1);
+                const rv = Math.abs(barrier.rightValue) > 999999999999? barrier.rightValue.toExponential(5): barrier.rightValue.toFixed(1);
                 if (barrier.leftValue > 0){
                     ctx.fillText(
-                        `${barrier.typel}: +${barrier.leftValue.toFixed(1)}`, 
-                        barrier.lw/2, barrier.y + 25
+                        `${barrier.typel}`, 
+                        barrier.lw/2, barrier.y+17
+                    );
+                    ctx.fillText(
+                        `+${lv}`, 
+                        barrier.lw/2, barrier.y + 32
                     );
                 }else{
                     ctx.fillText(
-                        `${barrier.typel}: ${barrier.leftValue.toFixed(1)}`, 
-                        barrier.lw/2, barrier.y + 25
+                        `${barrier.typel}`, 
+                        barrier.lw/2, barrier.y+17
+                    );
+                    ctx.fillText(
+                        `${lv}`, 
+                        barrier.lw/2, barrier.y + 32
                     );
                 }
 
                 if (barrier.midValue > 0){
                     ctx.fillText(
-                        `${barrier.typem}: +${barrier.midValue.toFixed(1)}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 25
+                        `${barrier.typem}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 17
+                    );
+                    ctx.fillText(
+                        `+${mv}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 32
                     );
                 }else{
                     ctx.fillText(
-                        `${barrier.typem}: ${barrier.midValue.toFixed(1)}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 25
+                        `${barrier.typem}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 17
+                    );
+                    ctx.fillText(
+                        `${mv}`, 
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 32
                     );
                 }
 
                 if (barrier.rightValue > 0){
                     ctx.fillText(
-                        `${barrier.typer}: +${barrier.rightValue.toFixed(1)}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 25
+                        `${barrier.typer}`, 
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 17
+                    );
+                    ctx.fillText(
+                        `+${rv}`, 
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 32
                     );
                 }else{
                     ctx.fillText(
-                        `${barrier.typer}: ${barrier.rightValue.toFixed(1)}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 25
+                        `${barrier.typer}`, 
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 17
+                    );
+                    ctx.fillText(
+                        `${rv}`, 
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 32
                     );
                 }
             });
@@ -721,6 +781,7 @@
                 }
             });
 
+            // 猜猜不加reverse会怎么样
             Array.from(bulletsToRemove).reverse().forEach(i => bullets.splice(i, 1));
             Array.from(enemiesToRemove).reverse().forEach(i => enemies.splice(i, 1));
         }
@@ -730,8 +791,8 @@
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'left';
             ctx.font = '20px Jellee';
-              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
-              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+            //  ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+            //  ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.strokeText(`Score: ${score}`, 10, 30);
@@ -739,17 +800,17 @@
             ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
             ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
             ctx.strokeStyle = 'rgba(255,255,255,0)';
-              ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-              ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-              ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-              ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-              ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-              ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-              ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-              ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-              ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-              ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-              ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
+            //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+            //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+            //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+            //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+            //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+            //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+            //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+            //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+            //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+            //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+            //  ctx.fillText(`dt: ${(deltaTime)}`, 10, 450);
             ctx.textAlign = 'center';
 
             ctx.stroke();
@@ -781,7 +842,7 @@
                 clearInterval(interval2);
                 background.classList.add('animate')
             }else{
-                // 这里说实话貌似有点小bug，但不好修，也不知道是什么，反正看到再说吧()
+                // 这里貌似有点小bug，但不好修，也不知道是什么，反正到时候发生了再说吧.jpg()
                 enemySpawnTimer += (Date.now()-stopTime);
                 lastFrameTime = Date.now();
                 lastFire += (Date.now()-stopTime);
@@ -937,22 +998,62 @@
             gameLoop();
         });
         
-        bType6.onload = function() {
-            // 启动游戏
-            initGame();
-            gameLoop();
-        };
+        //为了应对btype6加载好了，但btype2却没加载好的异步魅力时刻(
+        let imgs = 0;
+        bTypes.forEach(img => {
+            img.onload = function() {
+                imgs++;
+                if (imgs == bTypes.length) {
+                initGame();
+                gameLoop();
+            }
+            };
+            if (img.complete) imgs++;
+            if (imgs == bTypes.length) {
+                initGame();
+                gameLoop();
+            }
+        });
         
-        
-
+        // 至少，你可以在全屏子弹下没那么卡(
         function createCachedImage(source, sx, sy, sw, sh, dw, dh) {
             const cacheCanvas = new OffscreenCanvas(dw, dh);
             const cacheCtx = cacheCanvas.getContext('2d');
             cacheCtx.drawImage(source, sx, sy, sw, sh, 0, 0, dw, dh);
             return cacheCanvas;
         }
-        
-        
+
+        // // 中画质选项，无死亡过渡
+        // function createCachedEnemy(d, type, size) {
+        //     const cacheCanvas = new OffscreenCanvas(size*2,size*2);
+        //     const cacheCtx = cacheCanvas.getContext('2d');
+        //     const healthTextColor = ['#f00','#fff','#0ff'];
+
+        //     let add = '';
+        //     if (d-Math.floor(d)<1/3){
+        //         add = '-';
+        //     }
+        //     if (d-Math.floor(d)>2/3){
+        //         add = '+';
+        //     }
+                                    
+        //     cacheCtx.beginPath();
+        //     cacheCtx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
+        //     cacheCtx.shadowOffsetX = 0; 
+        //     cacheCtx.shadowOffsetY = size**0.5; 
+        //     cacheCtx.shadowBlur = 12; 
+
+        //     if (type!=1) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
+        //     cacheCtx.drawImage(dx[d], 0,0, 2*size,2*size);
+        //     drawText('D'+d+add, size, size, size*2/1.2, size*2, 'Jellee', '#FFF');
+
+        //     cacheCtx.shadowColor = 'transparent';
+        //     cacheCtx.shadowOffsetX = 0;
+        //     cacheCtx.shadowOffsetY = 0;
+        //     cacheCtx.shadowBlur = 0;
+        //     cacheCtx.filter = 'none';
+        //     return cacheCanvas;
+        // }
 
         // 鼠标和触摸事件的处理函数
         function startIncrement() {
@@ -977,6 +1078,7 @@
             clearInterval(interval2);
         }
 
+        // 偷窥狂合集 (?)
         buttonR.addEventListener('mousedown', startIncrement);
         buttonR.addEventListener('mouseup', stopIncrement);
         buttonR.addEventListener('mouseleave', stopIncrement); 
@@ -993,18 +1095,18 @@
             startIncrement2();
         });
         buttonL.addEventListener('touchend', stopIncrement2);
-
+        
         function generateBulletPaths(currentCount) {
             const MAX_BULLETS = Maxbullets[player.bulletType-1];
-            const weights = [];    // 概率权重数组
+            const weights = [];    
             
             // 根据当前数量生成权重（越接近上限概率越低）
-            for(let i=1; i<=5; i++){ // 最多弹道+5
+            for(let i=1; i<=5; i++){ // 最多弹道+5 * 2
                 const possible = currentCount + i;
                 if(possible > MAX_BULLETS) continue;
                 weights.push({
                     value: i,
-                    weight: 1/(i**4) // 权重衰减，越多的弹道越难生成，所以出现弹道+5的概率至少是1/125
+                    weight: 1/(i**4) // 权重衰减，越多的弹道越难生成，所以出现弹道+10的概率至少是1/625 * 1/5(下方-1不发生) = 1/3125，算上弹道本身的概率，足够叠上万分之一了(
                 });
             }
             
@@ -1174,7 +1276,7 @@
             });
         }
         
-        
+        // 你打不过都是它害的👇
         function increaseDifficulty() {
             if(gameTime%10 === 0 && !difficultyApplyed) {
                 
@@ -1190,6 +1292,8 @@
                 enemiesSizeBase = Math.min(35,enemiesSizeBase*1.05);
                 fallSpeedBase = Math.min(2.5,fallSpeedBase+0.02);
                 kickbackDistance = Math.max(0.06/1.25**(player.bulletType-1),kickbackDistance*0.9);
+                // 原本呢，这里是只有一遍的，但那就需要2000秒才能完成游戏，过于坐牢，而且我不想再慢慢调平衡性，所以就成这样了()
+                // 反正10秒才跑1次，没逝的)
                 if (gameTime>=1100){
                     damageDe *= 1.02;
                 }else{
@@ -1213,31 +1317,36 @@
             }
         }
 
+        // 紧张刺激(存疑)的boss战
         function bossSpawn() {
             if (gameTime%20 === 0){
-                const maxAttempts = 100; // 最大尝试次数
                 let newEnemy = null;
                 let isValidPosition = false;
+                const health = enemyHealthBase*10*Math.log(gameTime**(1/2));
+                const d = Math.min(MaxD,1+Math.floor(Math.log(health)/4));
+                const r =1+Math.log(health)/4-d;
 
                 //玩家回血
                 player.health = Math.min(player.maxHealth,player.health+player.maxHealth/25);
                 
                 // 照搬spawnEnemy就完事了
-                for(let i=0; i<maxAttempts; i++){
+                for(let i=0; i<100; i++){
                     newEnemy = {
                         x: Math.random() * (canvas.width - 30 - enemiesSizeBase*6) + 15 + enemiesSizeBase*3,
                         y: -105,
-                        health: enemyHealthBase*10*Math.log(gameTime**(1/2)),
+                        health: health,
                         size: enemiesSizeBase*3, 
                         speed: fallSpeedBase/3.5,
-                        maxHealth: enemyHealthBase*10*Math.log(gameTime**(1/2)),
+                        maxHealth: health,
                         boss: 1,
                         type: 0,
                         rotate: 0,
                         alpha: 0.99999,
                         ySpeed: 0,
                         xSpeed: 0,
-                        yAddSpeed: 0
+                        yAddSpeed: 0,
+                        d: d,
+                        remain: r
                     };
 
                     if(!checkEnemyCollision(newEnemy)){
@@ -1300,7 +1409,7 @@
         // 背景动画结束后，再把上一层背景扬了(
         function addEndListener(element, callback) {
             element.addEventListener('transitionend', function handler(event) {
-                // 背景好像不需要这个if，但谁知道我以后会加些什么玩意(
+                // 背景好像不需要这个if，但谁知道我以后会加些什么鬼玩意进来(
                 if (event.target === element) {
                     element.removeEventListener('transitionend', handler); 
                     callback();
