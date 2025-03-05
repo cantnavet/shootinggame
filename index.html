@@ -239,8 +239,8 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 5,
-                maxHealth: 5,
+                health: 999999999,
+                maxHealth: 999999999,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
@@ -638,9 +638,9 @@
                 ctx.font = '12px Arial';
 
                 // 屏障加成显示5位科学计数，但敌人血量却显示单位是有原因的(
-                const lv = Math.abs(barrier.leftValue) > 999999999999? barrier.leftValue.toExponential(5): barrier.leftValue.toFixed(1);
-                const mv = Math.abs(barrier.midValue) > 999999999999? barrier.midValue.toExponential(5): barrier.midValue.toFixed(1);
-                const rv = Math.abs(barrier.rightValue) > 999999999999? barrier.rightValue.toExponential(5): barrier.rightValue.toFixed(1);
+                const lv = Math.abs(barrier.leftValue) > 999999999999? barrier.leftValue.toExponential(5): barrier.leftValue.toFixed(2);
+                const mv = Math.abs(barrier.midValue) > 999999999999? barrier.midValue.toExponential(5): barrier.midValue.toFixed(2);
+                const rv = Math.abs(barrier.rightValue) > 999999999999? barrier.rightValue.toExponential(5): barrier.rightValue.toFixed(2);
                 if (barrier.leftValue > 0){
                     ctx.fillText(
                         `${barrier.typel}`, 
@@ -760,6 +760,32 @@
                     }
                 });
             });
+
+            const bSpeed = ((fallSpeedBase**1/2)* (deltaTime / 8.335)+0.5) * timeScale;
+            bullets.forEach((bullet) => {
+                barriers.forEach((barrier) => {
+                    if (bullet.y - bullet.width <= barrier.y + 40 &&
+                        bullet.y - bullet.width + bullet.speed * (deltaTime / 8.335)*timeScale > barrier.y + 40 - bSpeed * (deltaTime / 8.335)*timeScale
+                    ){
+                        if (bullet.x < barrier.lw){
+                            if (barrier.lc + 100 < Date.now()){
+                                barrier.lc = Date.now();
+                                barrier.leftValue += barrier.la;
+                            }
+                        }else if (bullet.x < barrier.rw){
+                            if (barrier.mc + 100 < Date.now()){
+                                barrier.mc = Date.now();
+                                barrier.midValue += barrier.ma;
+                            }
+                        }else{
+                            if (barrier.rc + 100 < Date.now()){
+                                barrier.rc = Date.now();
+                                barrier.rightValue += barrier.ra;
+                            }
+                        }
+                    }
+                });
+            });
             enemies.forEach((enemy, eIndex) => {
                 if (enemy.health < 0.05) {
                     enemy.health=0;
@@ -868,6 +894,11 @@
                 lastFrameTime = Date.now();
                 lastFire += (Date.now()-stopTime);
                 lastSec += (Date.now()-stopTime)/1000/timeScale;
+                barriers.forEach(barrier => {
+                    barrier.lc = Date.now();
+                    barrier.mc = Date.now();
+                    barrier.rc = Date.now();
+                });
                 gameLoop();
                 
             }
@@ -887,8 +918,8 @@
             if(gameOver) return;
             if(stops) return;
             const currentTime = Date.now();
-            if (lastSec < currentTime/1000){
-                lastSec = 1/timeScale+currentTime/1000;
+            if (lastSec+1/timeScale < currentTime/1000){
+                lastSec = currentTime/1000;
                 gameTime++;
 
                 bossSpawn();
@@ -1116,39 +1147,13 @@
             startIncrement2();
         });
         buttonL.addEventListener('touchend', stopIncrement2);
-        
-        function generateBulletPaths(currentCount) {
-            const MAX_BULLETS = Maxbullets[player.bulletType-1];
-            const weights = [];    
-            
-            // 根据当前数量生成权重（越接近上限概率越低）
-            for(let i=1; i<=5; i++){ // 最多弹道+5 * 2
-                const possible = currentCount + i;
-                if(possible > MAX_BULLETS) continue;
-                weights.push({
-                    value: i,
-                    weight: 1/(i**4) // 权重衰减，越多的弹道越难生成，所以出现弹道+10的概率至少是1/625 * 1/5(下方-1不发生) = 1/3125，算上弹道本身的概率，足够叠上万分之一了(
-                });
-            }
-            
-            // 随机选择
-            if(weights.length === 0) return 1;
-            const totalWeight = weights.reduce((sum, w) => sum + w.weight, 0);
-            let random = Math.random() * totalWeight;
-            
-            for(const w of weights){
-                if(random < w.weight) return w.value * 2 - Math.floor(Math.random()+0.8);
-                random -= w.weight;
-            }
-            return 1;
-        }
 
         function updateBarriers() {
             // 每5秒生成屏障 (加成)
-            if(gameTime%5 ===0 && barrierCD === false) {
-                let firstV = generateBulletPaths(player.bulletCount);
-                let secV = generateBulletPaths(player.bulletCount);
-                let thirdV = generateBulletPaths(player.bulletCount);
+            if(gameTime%7 ===0 && barrierCD === false) {
+                let firstV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
+                let secV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
+                let thirdV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
                 let ltypes = '弹道';
                 let mtypes = '弹道';
                 let rtypes = '弹道';
@@ -1216,9 +1221,15 @@
                     leftValue: firstV,  
                     midValue: secV,
                     rightValue: thirdV,
+                    la: Math.abs(firstV/100),
+                    ma: Math.abs(secV/100),
+                    ra: Math.abs(thirdV/100),
                     typel: ltypes,
                     typem: mtypes,
                     typer: rtypes,
+                    lc: 0,
+                    mc: 0,
+                    rc: 0,
                     lw: lWall,
                     rw: rWall
                 });
@@ -1226,7 +1237,7 @@
 
                 
                 barrierCD = true;
-            }else if(gameTime%5 !=0 ){
+            }else if(gameTime%7 !=0 ){
                 barrierCD = false;
             }
 
@@ -1273,7 +1284,7 @@
                 case '弹道':
                     player.bulletCount = Math.min(
                         Maxbullets[player.bulletType-1], 
-                        Math.max(1, player.bulletCount + value)
+                        Math.max(1, player.bulletCount + Math.floor(value))
                     );
                     break;
             }
