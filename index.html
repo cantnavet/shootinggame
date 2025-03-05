@@ -159,6 +159,12 @@
         let zindex2 = -1145141920;
         let difficulty;
         let quality;
+        let getBarrierLW;
+        let getBarrierRW;
+        let getBarrierType;
+        let getBarrierNum;
+        let getBarrierAlpha = 0;
+        let frameRate;
 
         const speedRange = document.getElementById('speedRange');
         speedRange.addEventListener('input', function() {
@@ -239,12 +245,13 @@
                 bulletCount: 1,  // 初始弹道数量
                 bulletSpread: 18, // 子弹间距
                 bulletX: 1,
-                health: 999999999,
-                maxHealth: 999999999,
+                health: 5,
+                maxHealth: 5,
                 bulletType: 1,
                 fireLim: 5,
                 ar: 1,
-                at: 0
+                at: 0,
+                miss: 0
             };
             //预渲染靴子弹 (?)
             bulletCache = [{
@@ -406,6 +413,7 @@
                                 player.health--;
                             }  
                         }
+                        player.miss++;
                         if (player.health <= 0){
                             gameOver = true;
                         }
@@ -615,6 +623,33 @@
 
         // 加成屏障绘制
         function drawBarriers() {
+            const maxDisplayValue = 9999999;
+            if (getBarrierAlpha > 0){
+                getBarrierAlpha = Math.max(0,getBarrierAlpha-0.01);
+                ctx.globalAlpha = getBarrierAlpha;
+                ctx.fillStyle = getBarrierNum >= 0 ? 'rgba(0,255,0,40%)' : 'rgba(255,0,0,40%)';
+                ctx.fillRect(getBarrierLW, player.y - 40, getBarrierRW - getBarrierLW, 40);
+                const v = Math.abs(getBarrierNum) > maxDisplayValue? getBarrierNum.toExponential(3): getBarrierNum.toFixed(2);
+                ctx.fillStyle = '#000';
+                ctx.font = '12px Arial';       
+                ctx.fillText(
+                    `${getBarrierType}`, 
+                    (getBarrierRW - getBarrierLW)/2+getBarrierLW, player.y - 25
+                );
+                ctx.font = '15px Arial';
+                ctx.fillText(
+                    `${(getBarrierNum >= 0 ?"+":"")+v}`, 
+                    (getBarrierRW - getBarrierLW)/2+getBarrierLW, player.y - 7
+                );
+                ctx.fillStyle = '#000';
+                if (getBarrierLW){
+                    ctx.fillRect(getBarrierLW-2, player.y - 40, 4, 40);
+                }
+                if (getBarrierRW<canvas.width){
+                    ctx.fillRect(getBarrierRW-2, player.y - 40, 4, 40);
+                }
+                ctx.globalAlpha = 1;
+            }
             barriers.forEach(barrier => {
                 // 绘制左侧区域
                 ctx.fillStyle = barrier.leftValue >= 0 ? 'rgba(0,255,0,40%)' : 'rgba(255,0,0,40%)';
@@ -637,67 +672,73 @@
                 ctx.fillStyle = '#000';
                 ctx.font = '12px Arial';
 
-                // 屏障加成显示5位科学计数，但敌人血量却显示单位是有原因的(
-                const lv = Math.abs(barrier.leftValue) > 999999999999? barrier.leftValue.toExponential(5): barrier.leftValue.toFixed(2);
-                const mv = Math.abs(barrier.midValue) > 999999999999? barrier.midValue.toExponential(5): barrier.midValue.toFixed(2);
-                const rv = Math.abs(barrier.rightValue) > 999999999999? barrier.rightValue.toExponential(5): barrier.rightValue.toFixed(2);
+                // 屏障加成显示3位科学计数，但敌人血量却显示单位是有原因的(
+                const lv = Math.abs(barrier.leftValue) > maxDisplayValue? barrier.leftValue.toExponential(3): barrier.leftValue.toFixed(2);
+                const mv = Math.abs(barrier.midValue) > maxDisplayValue? barrier.midValue.toExponential(3): barrier.midValue.toFixed(2);
+                const rv = Math.abs(barrier.rightValue) > maxDisplayValue? barrier.rightValue.toExponential(3): barrier.rightValue.toFixed(2);
                 if (barrier.leftValue > 0){
                     ctx.fillText(
                         `${barrier.typel}`, 
-                        barrier.lw/2, barrier.y+17
+                        barrier.lw/2, barrier.y+15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `+${lv}`, 
-                        barrier.lw/2, barrier.y + 32
+                        barrier.lw/2, barrier.y + 33
                     );
                 }else{
                     ctx.fillText(
                         `${barrier.typel}`, 
-                        barrier.lw/2, barrier.y+17
+                        barrier.lw/2, barrier.y+15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `${lv}`, 
-                        barrier.lw/2, barrier.y + 32
+                        barrier.lw/2, barrier.y + 33
                     );
                 }
-
+                ctx.font = '12px Arial';
                 if (barrier.midValue > 0){
                     ctx.fillText(
                         `${barrier.typem}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 17
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `+${mv}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 32
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 33
                     );
                 }else{
                     ctx.fillText(
                         `${barrier.typem}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 17
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `${mv}`, 
-                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 32
+                        barrier.lw+(barrier.rw-barrier.lw)/2, barrier.y + 33
                     );
                 }
-
+                ctx.font = '12px Arial';
                 if (barrier.rightValue > 0){
                     ctx.fillText(
                         `${barrier.typer}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 17
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `+${rv}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 32
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 33
                     );
                 }else{
                     ctx.fillText(
                         `${barrier.typer}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 17
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 15
                     );
+                    ctx.font = '15px Arial';
                     ctx.fillText(
                         `${rv}`, 
-                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 32
+                        barrier.rw+(canvas.width-barrier.rw)/2, barrier.y + 33
                     );
                 }
             });
@@ -770,17 +811,38 @@
                         if (bullet.x < barrier.lw){
                             if (barrier.lc + 100 < Date.now()){
                                 barrier.lc = Date.now();
-                                barrier.leftValue += barrier.la;
+                                if (barrier.typel == "伤害"){
+                                    barrier.leftValue += Math.max(barrier.la,0.04);
+                                }else{
+                                    barrier.leftValue += 0.05;
+                                }
+                            }
+                            if (barrier.typel == "弹道" && barrier.leftValue + player.bulletCount > Maxbullets[player.bulletType-1]){
+                                barrier.leftValue = Maxbullets[player.bulletType-1] - player.bulletCount;
                             }
                         }else if (bullet.x < barrier.rw){
                             if (barrier.mc + 100 < Date.now()){
                                 barrier.mc = Date.now();
-                                barrier.midValue += barrier.ma;
+                                if (barrier.typem == "伤害"){
+                                    barrier.midValue += Math.max(0.04,barrier.ma);
+                                }else{
+                                    barrier.midValue += 0.05;
+                                }
+                            }
+                            if (barrier.typem == "弹道" && barrier.midValue + player.bulletCount > Maxbullets[player.bulletType-1]){
+                                barrier.midValue = Maxbullets[player.bulletType-1] - player.bulletCount;
                             }
                         }else{
                             if (barrier.rc + 100 < Date.now()){
                                 barrier.rc = Date.now();
-                                barrier.rightValue += barrier.ra;
+                                if (barrier.typer == "伤害"){
+                                    barrier.rightValue += Math.max(0.04,barrier.ra);
+                                }else{
+                                    barrier.rightValue += 0.05;
+                                }
+                            }
+                            if (barrier.typer == "弹道" && barrier.rightValue + player.bulletCount > Maxbullets[player.bulletType-1]){
+                                barrier.rightValue = Maxbullets[player.bulletType-1] - player.bulletCount;
                             }
                         }
                     }
@@ -838,14 +900,16 @@
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'left';
             ctx.font = '20px Jellee';
-            //  ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
-            //  ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 90);
+              ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, 10, 120);
+              ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 150);
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 5;
             ctx.strokeText(`Score: ${score}`, 10, 30);
             ctx.fillText(`Score: ${score}`, 10, 30);
             ctx.strokeText(`Time: ${(gameTime)}`, 10, 60);
             ctx.fillText(`Time: ${(gameTime)}`, 10, 60);
+            ctx.strokeText(`Miss: ${(player.miss)}`, 10, 90);
+            ctx.fillText(`Miss: ${(player.miss)}`, 10, 90);
             ctx.strokeStyle = 'rgba(255,255,255,0)';
             //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
             //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
@@ -917,6 +981,8 @@
         function gameLoop() {
             if(gameOver) return;
             if(stops) return;
+
+            // 每秒一次
             const currentTime = Date.now();
             if (lastSec+1/timeScale < currentTime/1000){
                 lastSec = currentTime/1000;
@@ -929,6 +995,8 @@
                         player.bulletSpeed = Math.min(5,player.bulletSpeed*1.05);
                     }
                 }
+
+                frameRate = 1000 / deltaTime;
             }
 
             if (player.at>0.0001){
@@ -984,11 +1052,11 @@
             drawEnemies();
             drawBarriers();
             drawUI();
-            let frameRate = 1000 / deltaTime;
             ctx.textAlign = 'right';
             ctx.fillStyle = '#888';
             ctx.fillText(`FPS: ${frameRate.toFixed(1)}`, canvas.width-10, 30);
             ctx.textAlign = 'center';
+
             requestAnimationFrame(gameLoop);
 
             
@@ -1075,7 +1143,6 @@
             return cacheCanvas;
         }
 
-        // // 中画质选项，无死亡过渡
         // function createCachedEnemy(d, type, size) {
         //     const cacheCanvas = new OffscreenCanvas(size*2,size*2);
         //     const cacheCtx = cacheCanvas.getContext('2d');
@@ -1148,12 +1215,20 @@
         });
         buttonL.addEventListener('touchend', stopIncrement2);
 
+        function bulletProb() {
+            let n = 0.114514, count = 0;
+            do {
+                n = Math.random();
+            } while (n == 0 && count++ < 100); // 要是去掉count后你游戏炸了，那哥们你是这个👍
+            return Math.min(10,Math.log(1/n) / Math.log(2)+1);
+        }
+
         function updateBarriers() {
             // 每5秒生成屏障 (加成)
             if(gameTime%7 ===0 && barrierCD === false) {
-                let firstV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
-                let secV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
-                let thirdV = Math.min(Maxbullets[player.bulletType-1],(Math.random()**4+1)**3) * (Math.random()>0.5?1:-1);
+                let firstV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
+                let secV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
+                let thirdV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
                 let ltypes = '弹道';
                 let mtypes = '弹道';
                 let rtypes = '弹道';
@@ -1162,7 +1237,7 @@
                 bulletWeight = 1.5*(0.5+(20*player.bulletCount/Maxbullets[player.bulletType-1])**(0.7)/4);
                 if (gameTime>bulletTypeSpawnTimeBase(player.bulletType)-50 && player.bulletCount < Maxbullets[player.bulletType-1]/2) bulletWeight /=3;
                 if (gameTime>20 && gameTime<200 && player.bulletCount < 2) bulletWeight /=3;
-                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.1 || player.bulletCount>=Maxbullets[player.bulletType-1]){
                     firstV = 2*(Math.random()*5 - 3);
                     ltypes = '攻速';
                     if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
@@ -1170,10 +1245,10 @@
                         firstV *= enemyHealthBase/3/damageDe;
                         firstV += firstV>=0?0.5:-0.5;
                     }else{
-                        firstV += firstV>=0?1:-1;
+                        firstV += firstV>=0?1:-0.2;
                     }
                 }
-                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.1 || player.bulletCount>=Maxbullets[player.bulletType-1]){
                     secV = 2*(Math.random()*5 - 3);
                     mtypes = '攻速';
                     if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
@@ -1181,10 +1256,10 @@
                         secV *= enemyHealthBase/3/damageDe;
                         secV += secV>=0?0.5:-0.5;
                     }else{
-                        secV += secV>=0?1:-1;
+                        secV += secV>=0?1:-0.2;
                     }
                 }
-                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.07 || player.bulletCount>=Maxbullets[player.bulletType-1]){
+                if((noFireRate>=5 && player.fireRate > player.fireLim) || Math.random()*bulletWeight > 0.1 || player.bulletCount>=Maxbullets[player.bulletType-1]){
                     thirdV = 2*(Math.random()*5 - 3);
                     rtypes = '攻速';
                     if ((noFireRate<5 && Math.random()>0.35) || player.fireRate <= player.fireLim){
@@ -1192,7 +1267,7 @@
                         thirdV *= enemyHealthBase/3/damageDe;
                         thirdV += thirdV>=0?0.5:-0.5;
                     }else{
-                        thirdV += thirdV>=0?1:-1;
+                        thirdV += thirdV>=0?1:-0.2;
                     }
                 }
 
@@ -1260,20 +1335,29 @@
             if (player.x < barrier.lw){
                 area = 'leftValue';
                 typeI = 'typel';
+                getBarrierLW = 0;
+                getBarrierRW = barrier.lw;
             }else if (player.x < barrier.rw){
                 area = 'midValue';
                 typeI = 'typem';
+                getBarrierLW = barrier.lw;
+                getBarrierRW = barrier.rw;
             }else{
                 area = 'rightValue';
                 typeI = 'typer';
+                getBarrierLW = barrier.rw;
+                getBarrierRW = canvas.width;
             }
             const types = barrier[typeI];
             const value = barrier[area];
-            
+            getBarrierType = types;
+            getBarrierNum = value;
+            getBarrierAlpha = 1;
+
             switch(types) {
                 case '攻速':
                     if (player.fireRate >= player.fireLim ){
-                        player.fireRate = Math.max(player.fireLim, player.fireRate/=value/10+1);
+                        player.fireRate = Math.max(player.fireLim, player.fireRate/=value/7+1);
                     }else{
                         player.damage += value*enemyHealthBase/5/damageDe;
                     }
