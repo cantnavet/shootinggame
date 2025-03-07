@@ -1621,7 +1621,7 @@ function storageData() {
 
 function loadData() {
     if (localStorage.getItem("coins") != null) {
-        coins = JSON.parse(localStorage.getItem("coins"));s\
+        coins = JSON.parse(localStorage.getItem("coins"));
         buys = JSON.parse(localStorage.getItem("buys"));
         buyCoins = JSON.parse(localStorage.getItem("buyCoins"));
     }else{
