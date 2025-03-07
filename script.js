@@ -95,6 +95,7 @@ let getBarrierAlpha = 0;
 let frameRate;
 let resets = 0;
 let BGD = 0;
+let stopCD = 0;
 
 const speedRange = document.getElementById('speedRange');
 speedRange.addEventListener('input', function() {
@@ -948,6 +949,7 @@ function drawUI() {
 
 // 暂停
 function stop() {
+    if (Date.now() - stopCD < 1000 || Date.now() - stopTime < 500) return;
     if (gameOver) return;
     stops = !stops;
     if (stops) {
@@ -968,6 +970,7 @@ function stop() {
         background.classList.add('animate');
     }else{
         // 这里貌似有点小bug，但不好修，也不知道是什么，反正到时候发生了再说吧.jpg()
+        stopCD = Date.now();
         enemySpawnTimer += (Date.now()-stopTime);
         lastFrameTime = Date.now();
         lastFire += (Date.now()-stopTime);
@@ -1140,7 +1143,7 @@ function hexToRgb(hex) {
 // window.addEventListener('keyup', e => keys[e.key] = false);
 window.addEventListener('keydown', e => {
     if (e.key=='s'){
-        stop();
+        setTimeout(() => stop(),200);
     }
 });
 restartBtn.addEventListener('click', () => {
@@ -1616,6 +1619,11 @@ function buy(i) {
     updateShop();
     storageData();
   }
+}
+
+function gameOvers() {
+    gameOver = true;
+    drawUI();
 }
 
 function storageData() {
