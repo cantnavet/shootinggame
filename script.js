@@ -921,7 +921,7 @@ function drawUI() {
         ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
         ctx.fillText(`d: ${(difficulty)}`, 10, 420);
         ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);
-        ctx.fillText(`bs: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
+        ctx.fillText(`bus: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
     }
     ctx.textAlign = 'center';
 
