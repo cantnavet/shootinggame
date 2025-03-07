@@ -21,10 +21,15 @@ const MaxD = 11;
 const playerImg = new Image();
 playerImg.src = 'textures/player.png';
 var dx = new Array();
+var dxb = new Array();
 for (i=1;i<=MaxD;i++){
     dx[i] = new Image();
     dx[i].src = 'textures/d'+i+'.png';
 }
+// for (i=1;i<=MaxD;i++){
+//     dxb[i] = new Image();
+//     dxb[i].src = 'textures/d'+i+'b.png';
+// }
 
 const bType1 = new Image();
 bType1.src = 'textures/leather_boots.png';
@@ -118,13 +123,13 @@ function updateBG() {
             BGD = difficulty;
             zindex1=zindex2+1;
             bgE.style.zIndex = zindex2+1;
-            bgE.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+            bgE.style.backgroundImage= "url('textures/d"+difficulty+"b2.png')";
             triggerAnimation(offAnimation2);
         }else{
             BGD = difficulty
             zindex2=zindex1+1;
             bg2E.style.zIndex = zindex1+1;
-            bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+            bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b2.png')";
             triggerAnimation2(offAnimation);
         }
     }
@@ -155,8 +160,8 @@ function resizeCanvas() {
     mainShop.style.left = `50%`;
     mainShop.style.transform = `translateX(-50%)`;
     products.style.height = `${logicalHeight * scale-180}px`;
-    document.documentElement.style.setProperty('--bg-pos-ys', -94 * scale+'px');
-    document.documentElement.style.setProperty('--bg-speed', 1/fallSpeedBase+'s');
+    document.documentElement.style.setProperty('--bg-pos-ys', -800 * scale+'px');
+    document.documentElement.style.setProperty('--bg-speed', 10/fallSpeedBase+'s');
 }
 resizeCanvas();
 window.addEventListener('resize', () => {
@@ -921,7 +926,7 @@ function drawUI() {
         ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
         ctx.fillText(`d: ${(difficulty)}`, 10, 420);
         ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);
-        ctx.fillText(`bus: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
+        ctx.fillText(`bs: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
     }
     ctx.textAlign = 'center';
 
@@ -1540,13 +1545,13 @@ function triggerAnimation2(callback) {
 }
 
 function offAnimation() {
-    bgE.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+    bgE.style.backgroundImage= "url('textures/d"+difficulty+"b2.png')";
     const bg = document.querySelector('.bg-container');
     bg.classList.remove('midActive');
 }
 
 function offAnimation2() {
-    bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+    bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b2.png')";
     const bg = document.querySelector('.bg2-container');
     bg.classList.remove('midActive');
 }
