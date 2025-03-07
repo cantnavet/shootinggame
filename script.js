@@ -1,3 +1,4 @@
+// Copyright (C) 2025 cantnavet
 const canvas = document.getElementById('gameCanvas');
 const bgE = document.getElementById('bg');
 const bg2E = document.getElementById('bg2');
@@ -12,7 +13,7 @@ const damageTypes =[2,200,70000,20000000,7000000000,2000000000000];
 const XTypes =[1,2,3,4,5,6];
 const upgradeSpawnTime =[200,400,600,800,1000,99999999];
 const colors =['#663300','#ffffff','#ffff00','#888888','#00ffff','#000000'];
-// 这辈子用不着的神必单位合集
+// 这辈子都用不着的神必单位合集
 const numberToEng =['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd', 'Ocd', 'Nod', 'VgUvg' ,'Dvg' ,'Tvg', 'Qavg', 'Qivg', 'Sxvg', 'Spvg', 'Ocvg', 'Novg', 'TgUtg', 'Dtg', 'Ttg', 'Qatg','Qitg','Sxtg','Sptg', 'Octg', 'Notg', 'QagUqag', 'Dqag' ,'Tqag', 'Qaqag' ,'QiQag' ,'SxQag', 'SpQag', 'OcQag', 'NoQag','Bruh'];
 const bulletSpeeds =[5,8,12,16,20,25];
 const fireLims =[5,4,3.3,2.5,2,1];
@@ -450,7 +451,7 @@ function drawEnemies() {
                         
                         ctx.globalAlpha = enemy.alpha;
                         ctx.save();
-                        // 做了半天才发现translate函数be like:
+                        // 做了半天才发现有translate这玩意(
                         ctx.globalAlpha = 1;
                         ctx.translate(enemy.x, enemy.y);
                         ctx.rotate(enemy.rotate * Math.PI / 180); 
@@ -1131,7 +1132,7 @@ bTypes.forEach(img => {
     }
 });
 
-// 至少，你可以在全屏子弹下没那么卡(
+// 预裁剪优化，这都掉帧就赶紧改画质吧(
 function createCachedImage(source, sx, sy, sw, sh, dw, dh) {
     const cacheCanvas = new OffscreenCanvas(dw, dh);
     const cacheCtx = cacheCanvas.getContext('2d');
@@ -1364,7 +1365,7 @@ function applyUpgrade(barrier) {
         case '弹道':
             player.bulletCount = Math.min(
                 Maxbullets[player.bulletType-1], 
-                Math.max(1, player.bulletCount + Math.floor(value+0.005)) // 你也不想攻速+0.995显示的+1变成0吧(
+                Math.max(1, player.bulletCount + Math.floor(value+0.005)) // 你也不想攻速+0.995显示的+1吃到后变成0吧(
             );
             break;
     }
@@ -1470,7 +1471,7 @@ function bossSpawn() {
     }
 }
 
-// 别问为什么... 当我搓完一堆switch后灵光一闪就成这样了(
+// 别问为什么... 当我搓完一堆switch后突然意识到可以用数组就成这样了(
 function bulletDamageCalc(type){
     if (type>=1 && type<=6) return damageTypes[type-1];
 }
