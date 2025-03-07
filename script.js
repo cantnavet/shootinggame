@@ -134,7 +134,7 @@ function resizeCanvas() {
     const mainShop = document.getElementById("mainshop");
     const products = document.getElementById("products");
 
-    scale = Math.min((windowWidth-50) / logicalWidth, (windowHeight-80) / logicalHeight);
+    scale = Math.min((windowWidth-100) / logicalWidth, (windowHeight-80) / logicalHeight);
 
     canvas.style.width = `${logicalWidth * scale}px`;
     canvas.style.height = `${logicalHeight * scale}px`;
@@ -144,6 +144,9 @@ function resizeCanvas() {
     bg2E.style.height = `${logicalHeight * scale}px`;
 
     mainShop.style.height = `${logicalHeight * scale}px`;
+    mainShop.style.width = `${(Math.min(400,windowWidth/2))}px`;
+    mainShop.style.left = `50%`;
+    mainShop.style.transform = `translateX(-50%)`;
     products.style.height = `${logicalHeight * scale-180}px`;
     document.documentElement.style.setProperty('--bg-pos-ys', -94 * scale+'px');
     document.documentElement.style.setProperty('--bg-speed', 1/fallSpeedBase+'s');
@@ -1062,8 +1065,17 @@ function drawPlayer() {
     ctx.font = '15px Jellee';
     ctx.fillText(` ${player.health.toFixed(1)} / ${player.maxHealth.toFixed(1)}`, canvas.width/2,canvas.height-11);
 
-    ctx.fillStyle = '#00f';
-    ctx.fillRect(player.x-10, player.y, 20, 10);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
+    ctx.shadowOffsetX = 0; 
+    ctx.shadowOffsetY = 5; 
+    ctx.shadowBlur = 12; 
+    const playerSize = 30;
+    ctx.drawImage(playerImg, player.x-playerSize/2, player.y-playerSize/2, playerSize,playerSize)
+    ctx.shadowColor = 'transparent';
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.shadowBlur = 0;
+    ctx.filter = 'none';
 }
 
 // 神必的颜色和透明度合成
