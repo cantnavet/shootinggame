@@ -1612,3 +1612,22 @@ function buy(i) {
     storageData();
   }
 }
+
+function storageData() {
+  localStorage.setItem("coins", JSON.stringify(coins));
+  localStorage.setItem("buys", JSON.stringify(buys));
+  localStorage.setItem("buyCoins", JSON.stringify(buyCoins));
+}
+
+function loadData() {
+  if (localStorage.getItem("coins") != null) {
+    coins = JSON.parse(localStorage.getItem("coins"));s\
+    buys = JSON.parse(localStorage.getItem("buys"));
+    buyCoins = JSON.parse(localStorage.getItem("buyCoins"));
+  }else{
+    coins = 0;
+    buyCoins = [1,3,10,30,100,150];
+    buys = [6,6,6,6,6,5];
+  }
+}
+
