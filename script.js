@@ -8,6 +8,7 @@ const shop = document.getElementById('shop');
 const shopD = document.getElementById('shopDisplay');
 const gameD = document.getElementById('gameDisplay');
 const coinsD = document.getElementById('coins');
+const deb = document.getElementById('deb');
 
 const damageTypes =[2,200,70000,20000000,7000000000,2000000000000];
 const XTypes =[1,2,3,4,5,6];
@@ -224,6 +225,7 @@ function initGame() {
 
     if (defaults){
       Maxbullets = [6,6,6,6,6,6];
+      player.maxHealth = 5;
     }else{
       for (i = 0; i < 5; i++){
         Maxbullets[i] = buys[i];
@@ -256,6 +258,7 @@ function initGame() {
     shop.style.display = 'none';
     restartBtn.style.display = 'none';
     speedRange.style.display = 'none';
+    deb.style.display = 'none';
     difficultyApplyed = false;
     noFireRate = 0;
     difficulty = 1;
@@ -911,6 +914,11 @@ function drawUI() {
     ctx.textAlign = 'right';
     ctx.strokeText(`伤害: ${player.damage.toFixed(1)}`, canvas.width-10, 760);
     ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, canvas.width-10, 760);
+    if (defaults){
+        ctx.fillStyle = "#f00"
+        ctx.strokeText(`默认加成开启`, canvas.width-10, 740);
+        ctx.fillText(`默认加成开启`, canvas.width-10, 740);
+    }
     if (stops || gameOver){
         ctx.textAlign = 'left';
         ctx.fillStyle = 'rgba(255,255,255,0.05)'
@@ -944,6 +952,7 @@ function drawUI() {
         restartBtn.style.display = 'block';
         shop.style.display = 'block';
         speedRange.style.display = 'block';
+        deb.style.display = 'block';
     }
 }
 
@@ -1581,6 +1590,7 @@ function goGame() {
   shopD.style.top = -100+"%";
   if (defaults){
     Maxbullets = [6,6,6,6,6,6];
+    player.maxHealth = 5;
   }else{
     for (i = 0; i < 5; i++){
       Maxbullets[i] = buys[i];
@@ -1624,6 +1634,15 @@ function buy(i) {
 function gameOvers() {
     gameOver = true;
     drawUI();
+}
+
+function defaultButton(){
+    defaults = !defaults;
+    if (defaults){
+        deb.style.backgroundColor = "#f00";
+    }else{
+        deb.style.backgroundColor = "#fff"
+    }
 }
 
 function storageData() {
