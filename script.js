@@ -88,6 +88,8 @@ let getBarrierType;
 let getBarrierNum;
 let getBarrierAlpha = 0;
 let frameRate;
+let resets = 0;
+let BGD = 0;
 
 const speedRange = document.getElementById('speedRange');
 speedRange.addEventListener('input', function() {
@@ -111,16 +113,20 @@ function formatNum(num) {
 
 // 双重背景笑传之层层搬(
 function updateBG() {
-    if (zindex1<zindex2) {
-        zindex1=zindex2+1;
-        bgE.style.zIndex = zindex2+1;
-        bgE.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
-        triggerAnimation(offAnimation2);
-    }else{
-        zindex2=zindex1+1;
-        bg2E.style.zIndex = zindex1+1;
-        bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
-        triggerAnimation2(offAnimation);
+    if (BGD != difficulty){
+        if (zindex1<zindex2) {
+            BGD = difficulty;
+            zindex1=zindex2+1;
+            bgE.style.zIndex = zindex2+1;
+            bgE.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+            triggerAnimation(offAnimation2);
+        }else{
+            BGD = difficulty
+            zindex2=zindex1+1;
+            bg2E.style.zIndex = zindex1+1;
+            bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
+            triggerAnimation2(offAnimation);
+        }
     }
 }
 
@@ -167,6 +173,7 @@ function updateDeltaTime() {
 
 function initGame() {
     loadData();
+    resets = 0;
     quality = 0;
     ctx.imageSmoothingEnabled = false; 
     player = {
@@ -308,9 +315,20 @@ function drawBullets() {
         // })
         
         // if (bullet.type>=5) ctx.stroke();
-    if (quality <= 1){
+    if (quality < 1){
         const leftBullets = bullets.filter(b => !b.side);
         const rightBullets = bullets.filter(b => b.side);
+        
+        // 单次绘制同类型子弹
+        if (leftBullets.length) {
+            leftBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].left, b.x-21, b.y-5));
+        }
+        if (rightBullets.length) {
+            rightBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].right, b.x-8, b.y-5));
+        }
+    }else if (quality === 1){
+        const leftBullets = bullets.filter(b => !b.side && b.draw);
+        const rightBullets = bullets.filter(b => b.side && b.draw);
         
         // 单次绘制同类型子弹
         if (leftBullets.length) {
@@ -433,7 +451,7 @@ function drawEnemies() {
                 }
                 // 绘制敌人主体
                 if (enemy.type===0){
-                    if (quality===0){
+                    if (quality<=1){
                         // ctx.fillStyle = `hsl(${enemy.health * 20 /enemy.maxHealth * (3+Math.log(1+enemy.health))}, 70%, 50%)`;
                         ctx.beginPath();
                         
@@ -468,12 +486,13 @@ function drawEnemies() {
                         ctx.shadowBlur = 0;
                         ctx.filter = 'none';
                     }else{
+                        ctx.beginPath();
                         ctx.drawImage(dx[difficulty], enemy.x-enemy.size, enemy.y-enemy.size, 2*enemy.size,2*enemy.size);
                         if (enemy.health>0) drawText('D'+difficulty+add, enemy.x, enemy.y, enemy.size*2/1.2, enemy.size*2, 'Jellee', '#FFF');
                     }
                 }else{
                     ctx.beginPath();
-                    if (quality===0) {
+                    if (quality<=1) {
                         ctx.shadowColor = bulletColor(enemy.type+1);
                         ctx.shadowOffsetX = 0; 
                         ctx.shadowOffsetY = 0; 
@@ -483,7 +502,7 @@ function drawEnemies() {
                     // ctx.fillRect(enemy.x-enemy.size, enemy.y-enemy.size,enemy.size*2,enemy.size*2);
                     // 十分激烈的坐标转换
                     ctx.drawImage(bTypes[player.bulletType], enemy.x-enemy.size-enemy.size/8, enemy.y-enemy.size+enemy.size/8, 16/7*enemy.size,16/7*enemy.size);
-                    if (quality===0) {
+                    if (quality<=1) {
                         ctx.shadowColor = 'transparent';
                         ctx.shadowOffsetX = 0;
                         ctx.shadowOffsetY = 0;
@@ -766,7 +785,7 @@ function checkCollisions() {
       });
     checktime = Date.now()-startDT;
 
-    const bSpeed = ((fallSpeedBase**1/2)* (deltaTime / 8.335)+0.5) * timeScale;
+    const bSpeed = ((fallSpeedBase**1/2)+0.8) * timeScale* (deltaTime / 8.335);
     bullets.forEach((bullet) => {
         barriers.forEach((barrier) => {
             if (bullet.y - bullet.width <= barrier.y + 40 &&
@@ -869,7 +888,7 @@ function drawUI() {
     ctx.textAlign = 'left';
     ctx.font = '20px Jellee';
     
-    //  ctx.fillText(`攻速: ${(1000/player.fireRate).toFixed(1)}`, 10, 150);
+    // 
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 5;
     ctx.strokeText(`Score: ${score.toFixed(1)}`, 10, 30);
@@ -880,24 +899,30 @@ function drawUI() {
     ctx.fillText(`Miss: ${(player.miss)}`, 10, 90);
     ctx.font = '12px Jellee';
 
+    ctx.lineWidth = 3;
     ctx.strokeText(`弹道上限: ${(Maxbullets[player.bulletType-1])}`, 10, 760);
     ctx.fillText(`弹道上限: ${(Maxbullets[player.bulletType-1])}`, 10, 760);
     ctx.textAlign = 'right';
     ctx.strokeText(`伤害: ${player.damage.toFixed(1)}`, canvas.width-10, 760);
     ctx.fillText(`伤害: ${player.damage.toFixed(1)}`, canvas.width-10, 760);
-    ctx.strokeStyle = 'rgba(255,255,255,0)';
-    //  ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-    //  ctx.fillText(`ct: ${(checktime)}`, 10, 180);
-    //  ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-    //  ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-    //  ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-    //  ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-    //  ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-    //  ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-    //  ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-    //  ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-    //  ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-    //  ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);
+    if (stops || gameOver){
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(255,255,255,0.05)'
+        ctx.font = '12px Jellee';
+        ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
+        ctx.fillText(`ct: ${(checktime)}`, 10, 120);
+        ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
+        ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
+        ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
+        ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
+        ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
+        ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
+        ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
+        ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
+        ctx.fillText(`d: ${(difficulty)}`, 10, 420);
+        ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);
+        ctx.fillText(`bs: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
+    }
     ctx.textAlign = 'center';
 
     ctx.stroke();
@@ -921,6 +946,7 @@ function stop() {
     if (gameOver) return;
     stops = !stops;
     if (stops) {
+        drawUI();
         bgE.style.animationPlayState = 'paused';
         bg2E.style.animationPlayState = 'paused';
         restartBtn.style.display = 'block';
@@ -934,7 +960,7 @@ function stop() {
         stopTime = Date.now();
         clearInterval(interval);
         clearInterval(interval2);
-        background.classList.add('animate')
+        background.classList.add('animate');
     }else{
         // 这里貌似有点小bug，但不好修，也不知道是什么，反正到时候发生了再说吧.jpg()
         enemySpawnTimer += (Date.now()-stopTime);
@@ -1012,6 +1038,7 @@ function gameLoop() {
         for (let j=0; j<fires; j++){
             for(let i=0; i<player.bulletCount; i++){
                 bullets.push({
+                    draw: j===0,
                     c: bulletX,
                     x: player.x + startOffset + i*spreadStep,
                     y: player.y + j * ((player.bulletSpeed* (deltaTime / 8.335))*timeScale/fires),
@@ -1023,6 +1050,7 @@ function gameLoop() {
                 });
             }
         }
+        
         lastFire += fires * player.fireRate / timeScale;
     }
     
@@ -1222,7 +1250,7 @@ function bulletProb() {
 
 function updateBarriers() {
     // 每5秒生成屏障 (加成)
-    if(gameTime%7 ===0 && barrierCD === false) {
+    if(gameTime !== 0 && gameTime%7 ===0 && barrierCD === false) {
         let firstV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
         let secV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
         let thirdV = Math.min(Maxbullets[player.bulletType-1],bulletProb()) * (Math.random()>0.5?1:-0.3);
@@ -1316,7 +1344,7 @@ function updateBarriers() {
     // 记录到底的屏障以供移除
     const barriersToRemove = [];
     barriers.forEach(barrier => {
-        barrier.y += ((fallSpeedBase**1/3)* (deltaTime / 8.335)+0.8) * timeScale;
+        barrier.y += ((fallSpeedBase**1/2)+0.8) * timeScale* (deltaTime / 8.335);
         if(barrier.y + 40 >= player.y) {
             applyUpgrade(barrier);
             barriersToRemove.push(barrier);
@@ -1391,7 +1419,7 @@ function checkEnemyCollision(newEnemy) {
 
 // 你打不过都是它害的👇
 function increaseDifficulty() {
-    if(gameTime%10 === 0 && !difficultyApplyed) {
+    if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
         
         difficultyApplyed = true;
         if (gameTime>=1200){
@@ -1432,7 +1460,7 @@ function increaseDifficulty() {
 
 // 紧张刺激(存疑)的boss战
 function bossSpawn() {
-    if (gameTime%20 === 0){
+    if (gameTime !== 0 && gameTime%20 === 0){
         let newEnemy = null;
         let isValidPosition = false;
         const health = enemyHealthBase*10*Math.log(gameTime**(1/2));
@@ -1494,6 +1522,7 @@ function bulletSpeed(type){
 
 // 背景动画合集
 function triggerAnimation(callback) {
+    resets = 1;
     const bg = document.querySelector('.bg-container');
     if (callback) {
         addEndListener(bg, callback);
@@ -1502,6 +1531,7 @@ function triggerAnimation(callback) {
 }
 
 function triggerAnimation2(callback) {
+    resets = 1;
     const bg = document.querySelector('.bg2-container');
     if (callback) {
         addEndListener(bg, callback);
@@ -1510,11 +1540,13 @@ function triggerAnimation2(callback) {
 }
 
 function offAnimation() {
+    bgE.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
     const bg = document.querySelector('.bg-container');
     bg.classList.remove('midActive');
 }
 
 function offAnimation2() {
+    bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b.png')";
     const bg = document.querySelector('.bg2-container');
     bg.classList.remove('midActive');
 }
@@ -1578,23 +1610,5 @@ function buy(i) {
     buys[i]++;
     updateShop();
     storageData();
-  }
-}
-
-function storageData() {
-  localStorage.setItem("coins", JSON.stringify(coins));
-  localStorage.setItem("buys", JSON.stringify(buys));
-  localStorage.setItem("buyCoins", JSON.stringify(buyCoins));
-}
-
-function loadData() {
-  if (localStorage.getItem("coins") != null) {
-    coins = JSON.parse(localStorage.getItem("coins"));
-    buys = JSON.parse(localStorage.getItem("buys"));
-    buyCoins = JSON.parse(localStorage.getItem("buyCoins"));
-  }else{
-    coins = 0;
-    buyCoins = [1,3,10,30,100,150];
-    buys = [6,6,6,6,6,5]
   }
 }
