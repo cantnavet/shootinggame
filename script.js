@@ -23,8 +23,14 @@ const fireLims =[5,4,3.3,2.5,2,1];
 const MaxD = 11;
 const lvup = new Audio();
 const orb = new Audio();
+const achievementSound = new Audio();
+const openShop = new Audio();
+const closeShop = new Audio();
 lvup.src = 'sounds/levelup.wav';
 orb.src = 'sounds/orb.wav';
+achievementSound.src = 'sounds/challenge_complete.ogg';
+openShop.src = 'sounds/chestopen.wav';
+closeShop.src = 'sounds/chestclosed.wav';
 var dx = new Array();
 var dxb = new Array();
 for (i=1;i<=MaxD;i++){
@@ -36,6 +42,9 @@ for (i=1;i<=MaxD;i++){
 //     dxb[i].src = 'textures/d'+i+'b.png';
 // }
 
+// 军火展示（迫真）
+const heart = new Image();
+heart.src = 'textures/heart.png';
 const bType1 = new Image();
 bType1.src = 'textures/leather_boots.png';
 const bType2 = new Image();
@@ -105,7 +114,15 @@ let frameRate;
 let resets = 0;
 let BGD = 0;
 let stopCD = 0;
+let achievement = new Array(100).fill(0);
+let dA = {
+    name: "",
+    img: new Image(),
+    time: 0,
+    height: 0
+};
 
+console.log(achievement);
 const speedRange = document.getElementById('speedRange');
 speedRange.addEventListener('input', function() {
     timeScale = parseFloat(this.value);
@@ -118,6 +135,7 @@ speedRange2.addEventListener('input', function() {
     document.getElementById('speedValue2').textContent = this.value;
 });
 
+//声音池
 class SoundPool {
     constructor(src, poolSize) {
       this.pool = [];
@@ -130,7 +148,7 @@ class SoundPool {
     }
   
     play() {
-      if (Date.now()-this.lastplayTime<50) return;
+      if (Date.now()-this.lastplayTime<50) return;//每个音效有50ms的CD，不然你音响得炸(
       this.lastplayTime = Date.now();
       let count = 0;
       for (let sound of this.pool) {
@@ -216,7 +234,6 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener('resize', () => {
     resizeCanvas();
-    draw(); 
 });
 
 function updateDeltaTime() {
@@ -897,7 +914,7 @@ function checkCollisions() {
             //没错，敌人死亡后的抛物线甚至和子弹速度有关
             if (enemy.yAddSpeed == 0){
                 enemy.ySpeed = -(player.bulletSpeed**0.5*(Math.random()/3+1.1))-7;
-                enemy.yAddSpeed = 0.98/1.5;    //地心引力.jpg
+                enemy.yAddSpeed = 0.98/1.5;    //地心引力.jpg 除1.5是因为时间单位不是秒，空间单位更不是米(
                 enemy.xSpeed = (enemy.x<canvas.width/2?-1:1)*((Math.random()+0.5)*(player.bulletSpeed**0.5)+3);
                 enemy.rotate = 0;
                 if (enemy.boss == 1){
@@ -1049,13 +1066,12 @@ function stop() {
 
 }
 
-// 别问我为什么这点东西都要单独开2个函数()
-function moveLeft() {
-    player.x = Math.max(10, player.x - player.speed);
-}
-function moveRight() {
-    player.x = Math.min(canvas.width-10, player.x + player.speed);
-}
+// function moveLeft() {
+//     player.x = Math.max(10, player.x - player.speed);
+// }
+// function moveRight() {
+//     player.x = Math.min(canvas.width-10, player.x + player.speed);
+// }
 
 // 游戏主循环
 function gameLoop() {
@@ -1076,6 +1092,7 @@ function gameLoop() {
             }
         }
 
+        AchievementCount();
         frameRate = 1000 / deltaTime;
     }
 
@@ -1134,6 +1151,7 @@ function gameLoop() {
     drawEnemies();
     drawBarriers();
     drawUI();
+    displayAchievement();
     ctx.textAlign = 'right';
     ctx.fillStyle = '#888';
     ctx.font = '20px Jellee';
@@ -1228,59 +1246,6 @@ function createCachedImage(source, sx, sy, sw, sh, dw, dh) {
     return cacheCanvas;
 }
 
-// function createCachedEnemy(d, type, size) {
-//     const cacheCanvas = new OffscreenCanvas(size*2,size*2);
-//     const cacheCtx = cacheCanvas.getContext('2d');
-//     const healthTextColor = ['#f00','#fff','#0ff'];
-
-//     let add = '';
-//     if (d-Math.floor(d)<1/3){
-//         add = '-';
-//     }
-//     if (d-Math.floor(d)>2/3){
-//         add = '+';
-//     }
-                            
-//     cacheCtx.beginPath();
-//     cacheCtx.shadowColor = 'rgba(0, 0, 0, 0.5)'; 
-//     cacheCtx.shadowOffsetX = 0; 
-//     cacheCtx.shadowOffsetY = size**0.5; 
-//     cacheCtx.shadowBlur = 12; 
-
-//     if (type!=1) ctx.filter = 'drop-shadow(0px 0px 5px '+healthTextColor[i]+')';
-//     cacheCtx.drawImage(dx[d], 0,0, 2*size,2*size);
-//     drawText('D'+d+add, size, size, size*2/1.2, size*2, 'Jellee', '#FFF');
-
-//     cacheCtx.shadowColor = 'transparent';
-//     cacheCtx.shadowOffsetX = 0;
-//     cacheCtx.shadowOffsetY = 0;
-//     cacheCtx.shadowBlur = 0;
-//     cacheCtx.filter = 'none';
-//     return cacheCanvas;
-// }
-
-// // 鼠标和触摸事件的处理函数
-// function startIncrement() {
-//     if (stops) return;
-//     interval = setInterval(() => {
-//         moveRight();
-//     }, 10);
-// }
-
-// function stopIncrement() {
-//     clearInterval(interval);
-// }
-
-// function startIncrement2() {
-//     if (stops) return;
-//     interval2 = setInterval(() => {
-//         moveLeft();
-//     }, 10);
-// }
-
-// function stopIncrement2() {
-//     clearInterval(interval2);
-// }
 
 // // 偷窥狂合集 (?)
 // buttonR.addEventListener('mousedown', startIncrement);
@@ -1438,6 +1403,7 @@ function applyUpgrade(barrier) {
     getBarrierType = types;
     getBarrierNum = value;
     getBarrierAlpha = 1;
+    let oldBcount = player.bulletCount;
 
     switch(types) {
         case '攻速':
@@ -1453,9 +1419,22 @@ function applyUpgrade(barrier) {
         case '弹道':
             player.bulletCount = Math.min(
                 Maxbullets[player.bulletType-1], 
-                Math.max(1, player.bulletCount + Math.floor(value+0.005)) // 你也不想攻速+0.995显示的+1吃到后变成0吧(
+                Math.max(0, player.bulletCount + Math.floor(value+0.005)) // 你也不想攻速+0.995显示的+1吃到后变成0吧(
             );
             break;
+    }
+
+    if (player.damage<0){
+        addAchievement("全村最好的奶妈！",0,heart);
+    }
+    if (player.fireRate>=2000){
+        addAchievement("蜗牛",1,bTypes[player.bulletType-1]);
+    }
+    if (player.bulletCount===0){
+        addAchievement("放下屠刀，立地成佛",2,bTypes[player.bulletType-1]);
+    }
+    if (oldBcount === 0 && player.bulletCount>0){
+        addAchievement("极限自救！",3,bTypes[player.bulletType-1]);
     }
 }
 
@@ -1622,13 +1601,57 @@ function addEndListener(element, callback) {
     });
 }
 
+function addAchievement(name, place, img){
+    if (achievement[place] === 0){
+        dA.name = name;
+        dA.time = 8;
+        dA.img = img;
+        achievement[place] = 1;
+        achievementSound.play();
+        storageData();
+    }
+}
+
+function AchievementCount(){
+    if (dA.time>0){
+        dA.time--;
+        console.log(dA.time);
+    }
+}
+
+function displayAchievement(){
+    if (dA.time>5 && dA.height<70){
+        dA.height+=1.5*(deltaTime/8.335);
+    }else if (dA.time>0 && dA.time<=3){
+        dA.height-=1.5*(deltaTime/8.335);
+    }else if (dA.time===0){
+        dA.height=0;
+    }
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(canvas.width-351,dA.height-71,352,72);
+    ctx.fillStyle = '#666666';
+    ctx.fillRect(canvas.width-350,dA.height-70,350,70);
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(canvas.width-345,dA.height-65,340,60);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#ff0';
+    ctx.fillText("获得成就！ ",canvas.width-270,dA.height-40);
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(dA.name,canvas.width-270,dA.height-15);
+    ctx.drawImage(dA.img,canvas.width-330,dA.height-55,40,40)
+}
+
 function goShop() {
   gameD.style.opacity = 0.5;
   shopD.style.top = 50+"%";
+  openShop.play();
   updateShop();
 }
 
 function goGame() {
+  closeShop.play()
   gameD.style.opacity = 1;
   shopD.style.top = -100+"%";
   if (defaults){
@@ -1667,7 +1690,7 @@ function updateShop() {
 function buy(i) {
   if (coins >= buyCoins[i] && buys[i] < MaxBuys[i]) {
     coins -= buyCoins[i];
-    buyCoins[i] *= 1.1;
+    buyCoins[i] *= 1.2;
     buys[i]++;
     updateShop();
     storageData();
@@ -1692,6 +1715,7 @@ function storageData() {
   localStorage.setItem("coins", JSON.stringify(coins));
   localStorage.setItem("buys", JSON.stringify(buys));
   localStorage.setItem("buyCoins", JSON.stringify(buyCoins));
+  localStorage.setItem("achievement", JSON.stringify(achievement));
 }
 
 function loadData() {
@@ -1704,6 +1728,13 @@ function loadData() {
         buyCoins = [1,3,10,30,100,150];
         buys = [6,6,6,6,6,5];
     }
+
+    if (localStorage.getItem("achievement") != null){
+        achievement = JSON.parse(localStorage.getItem("achievement"));
+    }else{
+        achievement = new Array(100).fill(0);
+    }
+    console.log(achievement);
 }
 
 function goMainCD() {
