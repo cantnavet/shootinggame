@@ -1609,6 +1609,7 @@ function addEndListener(element, callback) {
     });
 }
 
+//成就合集
 function addAchievement(name, place, img){
     if (achievement[place] === 0 || place === 4){
         dA.name = name;
