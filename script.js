@@ -1624,7 +1624,7 @@ function updateShop() {
 function buy(i) {
   if (coins >= buyCoins[i] && buys[i] < MaxBuys[i]) {
     coins -= buyCoins[i];
-    buyCoins[i] *= 1.1;
+    buyCoins[i] *= 1.2;
     buys[i]++;
     updateShop();
     storageData();
