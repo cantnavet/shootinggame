@@ -1459,7 +1459,9 @@ function checkEnemyCollision(newEnemy) {
 // 你打不过都是它害的👇
 function increaseDifficulty() {
     if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
-        
+        if (player.bulletType==6){
+            addAchievement("恭喜通关！",4,bType6)
+        }
         difficultyApplyed = true;
         if (gameTime>=1200){
             damageDe *= 1.02;
