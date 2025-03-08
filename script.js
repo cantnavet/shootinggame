@@ -1477,7 +1477,7 @@ function checkEnemyCollision(newEnemy) {
 function increaseDifficulty() {
     if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
         difficultyApplyed = true;
-        if (gameTime>=1200){
+        if (gameTime>=1130){
             damageDe *= 1.02;
         }else{
             damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
@@ -1490,7 +1490,7 @@ function increaseDifficulty() {
         kickbackDistance = Math.max(0.06/1.25**(player.bulletType-1),kickbackDistance*0.9);
         // 原本呢，这里是只有一遍的，但那就需要2000秒才能完成游戏，过于坐牢，而且我不想再慢慢调平衡性，所以就成这样了()
         // 反正10秒才跑1次，没逝的)
-        if (gameTime>=1200){
+        if (gameTime>=1130){
             damageDe *= 1.02;
         }else{
             damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
