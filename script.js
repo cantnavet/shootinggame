@@ -1460,7 +1460,7 @@ function checkEnemyCollision(newEnemy) {
 function increaseDifficulty() {
     if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
         if (player.bulletType==6){
-            addAchievement("恭喜通关！",4,bType6)
+            addAchievement("恭喜第"+(achievement[4]+1)+"次通关！",4,bType6);
         }
         difficultyApplyed = true;
         if (gameTime>=1200){
@@ -1604,11 +1604,11 @@ function addEndListener(element, callback) {
 }
 
 function addAchievement(name, place, img){
-    if (achievement[place] === 0){
+    if (achievement[place] === 0 || place === 4){
         dA.name = name;
         dA.time = 8;
         dA.img = img;
-        achievement[place] = 1;
+        achievement[place] += 1;
         achievementSound.play();
         storageData();
     }
