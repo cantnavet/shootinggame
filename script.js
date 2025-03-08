@@ -115,6 +115,7 @@ let resets = 0;
 let BGD = 0;
 let stopCD = 0;
 let achievement = new Array(100).fill(0);
+let comp = false;
 let dA = {
     name: "",
     img: new Image(),
@@ -327,6 +328,7 @@ function initGame() {
     difficultyApplyed = false;
     noFireRate = 0;
     difficulty = 1;
+    comp = false;
     bgE.style.animationPlayState = 'running';
     bg2E.style.animationPlayState = 'running';
     updateBG();
@@ -1077,6 +1079,10 @@ function stop() {
 function gameLoop() {
     if(gameOver || mainCD) return;
     if(stops) return;
+    // player.health=999999;
+    // player.damage=999999999999999999999;
+    // player.fireRate=5;
+    // speedRange.style.display = 'block';
 
     // 每秒一次
     const currentTime = Date.now();
@@ -1091,7 +1097,10 @@ function gameLoop() {
                 player.bulletSpeed = Math.min(5,player.bulletSpeed*1.05);
             }
         }
-
+        if (player.bulletType==6 && !comp){
+            addAchievement("恭喜第"+(achievement[4]+1)+"次通关！",4,bType6);
+            comp = true;
+        }
         AchievementCount();
         frameRate = 1000 / deltaTime;
     }
@@ -1228,14 +1237,14 @@ restartBtn.addEventListener('click', () => {
     gameLoop();
 });
 
-
-playerImg.onload = function() {
+achievementSound.addEventListener('canplaythrough', function() {
     document.fonts.ready.then(function() {
         goMainCD();
     }).catch(function(error) {
         console.error('字体加载失败:', error);
     })
-} 
+});
+
 
 
 // 预裁剪优化，这都掉帧就赶紧改画质吧(
@@ -1459,9 +1468,6 @@ function checkEnemyCollision(newEnemy) {
 // 你打不过都是它害的👇
 function increaseDifficulty() {
     if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
-        if (player.bulletType==6){
-            addAchievement("恭喜第"+(achievement[4]+1)+"次通关！",4,bType6);
-        }
         difficultyApplyed = true;
         if (gameTime>=1200){
             damageDe *= 1.02;
@@ -1611,6 +1617,7 @@ function addAchievement(name, place, img){
         achievement[place] += 1;
         achievementSound.play();
         storageData();
+        console.log("add: "+name+" place: "+place+" count: "+achievement[place]);
     }
 }
 
