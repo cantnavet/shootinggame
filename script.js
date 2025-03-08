@@ -116,6 +116,7 @@ let BGD = 0;
 let stopCD = 0;
 let achievement = new Array(100).fill(0);
 let comp = false;
+let load;
 let dA = {
     name: "",
     img: new Image(),
@@ -333,6 +334,7 @@ function initGame() {
     bgE.style.animationPlayState = 'running';
     bg2E.style.animationPlayState = 'running';
     updateBG();
+    load = true;
     //goShop();
 }
 
@@ -1080,10 +1082,10 @@ function stop() {
 function gameLoop() {
     if(gameOver || mainCD) return;
     if(stops) return;
-     player.health=999999;
-     player.damage=999999999999999999999;
-     player.fireRate=5;
-     speedRange.style.display = 'block';
+    //   player.health=999999;
+    //   player.damage=999999999999999999999;
+    //   player.fireRate=5;
+    //   speedRange.style.display = 'block';
 
     // 每秒一次
     const currentTime = Date.now();
@@ -1239,11 +1241,16 @@ restartBtn.addEventListener('click', () => {
 });
 
 achievementSound.addEventListener('canplaythrough', function() {
-    document.fonts.ready.then(function() {
-        goMainCD();
-    }).catch(function(error) {
-        console.error('字体加载失败:', error);
-    })
+    if (score===0 && load===undefined){
+        load = true;
+        document.fonts.ready.then(function() {
+            goMainCD();
+        }).catch(function(error) {
+            console.error('字体加载失败:', error);
+        })
+    }else{
+        console.log("it is started")
+    }
 });
 
 
