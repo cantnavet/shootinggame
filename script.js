@@ -245,6 +245,7 @@ function updateDeltaTime() {
 
 
 function initGame() {
+    console.log("init game");
     loadData();
     resets = 0;
     quality = 0;
@@ -1079,10 +1080,10 @@ function stop() {
 function gameLoop() {
     if(gameOver || mainCD) return;
     if(stops) return;
-    // player.health=999999;
-    // player.damage=999999999999999999999;
-    // player.fireRate=5;
-    // speedRange.style.display = 'block';
+     player.health=999999;
+     player.damage=999999999999999999999;
+     player.fireRate=5;
+     speedRange.style.display = 'block';
 
     // 每秒一次
     const currentTime = Date.now();
@@ -1609,7 +1610,6 @@ function addEndListener(element, callback) {
     });
 }
 
-//成就合集
 function addAchievement(name, place, img){
     if (achievement[place] === 0 || place === 4){
         dA.name = name;
@@ -1748,6 +1748,7 @@ function loadData() {
 }
 
 function goMainCD() {
+    console.log("goingCD");
     startb.style.display = 'block';
     mainCD = true;
     initGame();
@@ -1760,6 +1761,7 @@ function goMainCD() {
 }
 
 function start() {
+    console.log("start");
     startb.style.display = 'none';
     mainCD = false;
     initGame();
