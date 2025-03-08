@@ -9,6 +9,8 @@ const shopD = document.getElementById('shopDisplay');
 const gameD = document.getElementById('gameDisplay');
 const coinsD = document.getElementById('coins');
 const deb = document.getElementById('deb');
+const CDDisplay = document.getElementById('cdDisplay');
+const startb = document.getElementById('startb');
 
 const damageTypes =[2,200,70000,20000000,7000000000,2000000000000];
 const XTypes =[1,2,3,4,5,6];
@@ -19,8 +21,10 @@ const numberToEng =['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','
 const bulletSpeeds =[5,8,12,16,20,25];
 const fireLims =[5,4,3.3,2.5,2,1];
 const MaxD = 11;
-const playerImg = new Image();
-playerImg.src = 'textures/player.png';
+const lvup = new Audio();
+const orb = new Audio();
+lvup.src = 'sounds/levelup.wav';
+orb.src = 'sounds/orb.wav';
 var dx = new Array();
 var dxb = new Array();
 for (i=1;i<=MaxD;i++){
@@ -47,6 +51,10 @@ bType6.src = 'textures/netherite_boots.png';
 
 const bTypes = [bType1,bType2,bType3,bType4,bType5,bType6];
 
+const playerImg = new Image();
+playerImg.src = 'textures/player.png';
+
+let mainCD = true;
 let Maxbullets = [6,6,6,6,6,6];
 const MaxBuys = [35,35,35,35,35,50];
 const MaxHeart = 20;
@@ -110,6 +118,42 @@ speedRange2.addEventListener('input', function() {
     document.getElementById('speedValue2').textContent = this.value;
 });
 
+class SoundPool {
+    constructor(src, poolSize) {
+      this.pool = [];
+      this.lastplayTime = 0;
+      for (let i = 0; i < poolSize; i++) {
+        const sound = new Audio(src[i%src.length]);
+        sound.preload = 'auto';
+        this.pool.push(sound);
+      }
+    }
+  
+    play() {
+      if (Date.now()-this.lastplayTime<50) return;
+      this.lastplayTime = Date.now();
+      let count = 0;
+      for (let sound of this.pool) {
+        if (sound.paused) {
+            if (Math.random()>0.5 || count>5){
+                sound.currentTime = 0;
+                sound.play();
+                console.log("成功播放音效"+sound.src);
+                return;
+            }else{
+                count++;
+            }
+          
+        }
+      }
+      console.log("所有音效都在播放中");
+    }
+}
+const src = ['sounds/cloth1.wav','sounds/cloth2.wav','sounds/cloth3.wav','sounds/cloth4.wav'];
+const soundPool = new SoundPool(src, 55);
+  
+
+
 // 敌人太多血怎么办?
 function formatNum(num) {
     if (num < 1000) return num.toFixed(1);
@@ -134,6 +178,9 @@ function updateBG() {
             bg2E.style.backgroundImage= "url('textures/d"+difficulty+"b2.png')";
             triggerAnimation2(offAnimation);
         }
+        if (difficulty > 1){
+            orb.play();
+        } 
     }
 }
 
@@ -157,6 +204,7 @@ function resizeCanvas() {
     bg2E.style.width = `${logicalWidth * scale}px`;
     bg2E.style.height = `${logicalHeight * scale}px`;
 
+    CDDisplay.style.top = `${(logicalHeight * scale/2)}px`;
     mainShop.style.height = `${logicalHeight * scale}px`;
     mainShop.style.width = `${(Math.min(400,windowWidth/2))}px`;
     mainShop.style.left = `50%`;
@@ -519,6 +567,7 @@ function drawEnemies() {
                         ctx.filter = 'none';
                     }
                 }
+                ctx.closePath(); 
                 
                 if (enemy.health>0){
                     // 绘制血条背景
@@ -741,7 +790,7 @@ function checkCollisions() {
     const validEnemies = enemies.filter(enemy => enemy.health > 0);
 
       bullets.forEach((bullet, bIndex) => {
-        validEnemies.forEach((enemy, eIndex) => {
+        validEnemies.forEach((enemy) => {
               // const xDistance = Math.abs(bullet.x - enemy.x);
               let l=0;
               let r=0;
@@ -789,6 +838,7 @@ function checkCollisions() {
                   if (bullet.c<1){
                       bulletsToRemove.add(bIndex);
                   }
+                  soundPool.play();
               }
           });
       });
@@ -881,6 +931,7 @@ function checkCollisions() {
                 player.fireLim = fireLims[player.bulletType-1];
                 player.ar=3;
                 player.at=1;
+                lvup.play();
             }
         }
     });
@@ -923,19 +974,19 @@ function drawUI() {
         ctx.textAlign = 'left';
         ctx.fillStyle = 'rgba(255,255,255,0.05)'
         ctx.font = '12px Jellee';
-        ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);
-        ctx.fillText(`ct: ${(checktime)}`, 10, 120);
-        ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);
-        ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);
-        ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);
-        ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);
-        ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);
-        ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);
-        ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);
-        ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);
-        ctx.fillText(`d: ${(difficulty)}`, 10, 420);
-        ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);
-        ctx.fillText(`bs: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);
+        ctx.fillText(`De: ${(damageDe.toFixed(2))}`, 10, 150);  //加成刷出的伤害会除以这个数，用来抵消攻速和弹道的巨量加成
+        ctx.fillText(`ct: ${(checktime)}`, 10, 120);            //计算子弹和敌人碰撞的毫秒数，基本上不会超过10，很少超过5，不太会影响帧数
+        ctx.fillText(`BW: ${(bulletWeight.toFixed(2))}`, 10, 180);      //每格增益出弹道的概率，为1/10x
+        ctx.fillText(`EHR: ${(enemyHealthRate.toFixed(2))}`, 10, 210);  //普通敌人的当前基础血量
+        ctx.fillText(`ESR: ${(enemySpawnRate.toFixed(2))}`, 10, 240);   //普通敌人的生成间隔，单位为毫秒
+        ctx.fillText(`NF: ${(noFireRate.toFixed(2))}`, 10, 270);        //有多久没出过正数攻速增益
+        ctx.fillText(`FLim: ${(player.fireLim.toFixed(2))}`, 10, 300);  //弹道上限，虽然左下角已经有了
+        ctx.fillText(`KB: ${(kickbackDistance.toFixed(4))}`, 10, 330);  //每个子弹每1/60s(还是30或120?)对敌人的y轴击退距离
+        ctx.fillText(`at: ${(player.at.toFixed(4))}`, 10, 360);         //玩家吃到下一个鞋子时出现的那个圆形特效的透明度
+        ctx.fillText(`ar: ${(player.ar.toFixed(4))}`, 10, 390);         //玩家吃到下一个鞋子时出现的那个圆形特效的半径
+        ctx.fillText(`d: ${(difficulty)}`, 10, 420);                    //当前难度(D几)
+        ctx.fillText(`dt: ${(player.bulletType-1)}`, 10, 450);          //当前玩家的子弹类型
+        ctx.fillText(`bs: ${(1000/player.fireRate).toFixed(1)}`, 10, 480);  //每个弹道的每秒发射子弹数量
     }
     ctx.textAlign = 'center';
 
@@ -959,7 +1010,7 @@ function drawUI() {
 // 暂停
 function stop() {
     if (Date.now() - stopCD < 1000 || Date.now() - stopTime < 500) return;
-    if (gameOver) return;
+    if (gameOver || mainCD) return;
     stops = !stops;
     if (stops) {
         drawUI();
@@ -976,7 +1027,6 @@ function stop() {
         stopTime = Date.now();
         clearInterval(interval);
         clearInterval(interval2);
-        background.classList.add('animate');
     }else{
         // 这里貌似有点小bug，但不好修，也不知道是什么，反正到时候发生了再说吧.jpg()
         stopCD = Date.now();
@@ -1009,7 +1059,7 @@ function moveRight() {
 
 // 游戏主循环
 function gameLoop() {
-    if(gameOver) return;
+    if(gameOver || mainCD) return;
     if(stops) return;
 
     // 每秒一次
@@ -1097,8 +1147,8 @@ function gameLoop() {
 
 // 玩家绘制
 function drawPlayer() {
-    ctx.fillStyle = colorWithOpacity(colors[player.bulletType-1],player.at)
-    ctx.arc(player.x, player.y, player.ar, 0, Math.PI * 2);
+    ctx.fillStyle = colorWithOpacity(colors[player.bulletType-1],player.at);
+    if (player.at>0.0001) ctx.arc(player.x, player.y, player.ar, 0, Math.PI * 2);
     ctx.fill();
     //玩家血条
     ctx.fillStyle = '#000';
@@ -1160,22 +1210,15 @@ restartBtn.addEventListener('click', () => {
     gameLoop();
 });
 
-//为了应对btype6加载好了，但btype2却没加载好的异步魅力时刻(
-let imgs = 0;
-bTypes.forEach(img => {
-    img.onload = function() {
-        imgs++;
-        if (imgs == bTypes.length) {
-        initGame();
-        gameLoop();
-    }
-    };
-    if (img.complete) imgs++;
-    if (imgs == bTypes.length) {
-        initGame();
-        gameLoop();
-    }
-});
+
+playerImg.onload = function() {
+    document.fonts.ready.then(function() {
+        goMainCD();
+    }).catch(function(error) {
+        console.error('字体加载失败:', error);
+    })
+} 
+
 
 // 预裁剪优化，这都掉帧就赶紧改画质吧(
 function createCachedImage(source, sx, sy, sw, sh, dw, dh) {
@@ -1216,46 +1259,46 @@ function createCachedImage(source, sx, sy, sw, sh, dw, dh) {
 //     return cacheCanvas;
 // }
 
-// 鼠标和触摸事件的处理函数
-function startIncrement() {
-    if (stops) return;
-    interval = setInterval(() => {
-        moveRight();
-    }, 10);
-}
+// // 鼠标和触摸事件的处理函数
+// function startIncrement() {
+//     if (stops) return;
+//     interval = setInterval(() => {
+//         moveRight();
+//     }, 10);
+// }
 
-function stopIncrement() {
-    clearInterval(interval);
-}
+// function stopIncrement() {
+//     clearInterval(interval);
+// }
 
-function startIncrement2() {
-    if (stops) return;
-    interval2 = setInterval(() => {
-        moveLeft();
-    }, 10);
-}
+// function startIncrement2() {
+//     if (stops) return;
+//     interval2 = setInterval(() => {
+//         moveLeft();
+//     }, 10);
+// }
 
-function stopIncrement2() {
-    clearInterval(interval2);
-}
+// function stopIncrement2() {
+//     clearInterval(interval2);
+// }
 
-// 偷窥狂合集 (?)
-buttonR.addEventListener('mousedown', startIncrement);
-buttonR.addEventListener('mouseup', stopIncrement);
-buttonR.addEventListener('mouseleave', stopIncrement); 
-buttonL.addEventListener('mousedown', startIncrement2);
-buttonL.addEventListener('mouseup', stopIncrement2);
-buttonL.addEventListener('mouseleave', stopIncrement2);
-buttonR.addEventListener('touchstart', (event) => {
-    event.preventDefault(); 
-    startIncrement();
-});
-buttonR.addEventListener('touchend', stopIncrement);
-buttonL.addEventListener('touchstart', (event) => {
-    event.preventDefault(); 
-    startIncrement2();
-});
-buttonL.addEventListener('touchend', stopIncrement2);
+// // 偷窥狂合集 (?)
+// buttonR.addEventListener('mousedown', startIncrement);
+// buttonR.addEventListener('mouseup', stopIncrement);
+// buttonR.addEventListener('mouseleave', stopIncrement); 
+// buttonL.addEventListener('mousedown', startIncrement2);
+// buttonL.addEventListener('mouseup', stopIncrement2);
+// buttonL.addEventListener('mouseleave', stopIncrement2);
+// buttonR.addEventListener('touchstart', (event) => {
+//     event.preventDefault(); 
+//     startIncrement();
+// });
+// buttonR.addEventListener('touchend', stopIncrement);
+// buttonL.addEventListener('touchstart', (event) => {
+//     event.preventDefault(); 
+//     startIncrement2();
+// });
+// buttonL.addEventListener('touchend', stopIncrement2);
 
 function bulletProb() {
     let n = 0.114514, count = 0;
@@ -1624,7 +1667,7 @@ function updateShop() {
 function buy(i) {
   if (coins >= buyCoins[i] && buys[i] < MaxBuys[i]) {
     coins -= buyCoins[i];
-    buyCoins[i] *= 1.2;
+    buyCoins[i] *= 1.1;
     buys[i]++;
     updateShop();
     storageData();
@@ -1661,4 +1704,23 @@ function loadData() {
         buyCoins = [1,3,10,30,100,150];
         buys = [6,6,6,6,6,5];
     }
+}
+
+function goMainCD() {
+    startb.style.display = 'block';
+    mainCD = true;
+    initGame();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    shop.style.display = 'block';
+    deb.style.display = 'block';
+    speedRange.style.display = 'block';
+    drawUI();
+    drawPlayer();
+}
+
+function start() {
+    startb.style.display = 'none';
+    mainCD = false;
+    initGame();
+    gameLoop();
 }
