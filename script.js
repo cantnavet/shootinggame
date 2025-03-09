@@ -23,11 +23,13 @@ const fireLims =[5,4,3.3,2.5,2,1];
 const MaxD = 11;
 const lvup = new Audio();
 const orb = new Audio();
+const page = new Audio();
 const achievementSound = new Audio();
 const openShop = new Audio();
 const closeShop = new Audio();
 lvup.src = 'sounds/levelup.wav';
 orb.src = 'sounds/orb.wav';
+page.src = 'sounds/select_pattern1.wav';
 achievementSound.src = 'sounds/challenge_complete.ogg';
 openShop.src = 'sounds/chestopen.wav';
 closeShop.src = 'sounds/chestclosed.wav';
@@ -199,7 +201,7 @@ function updateBG() {
             triggerAnimation2(offAnimation);
         }
         if (difficulty > 1){
-            orb.play();
+            page.play();
         } 
     }
 }
@@ -1477,7 +1479,7 @@ function checkEnemyCollision(newEnemy) {
 function increaseDifficulty() {
     if(gameTime !== 0 && gameTime%10 === 0 && !difficultyApplyed) {
         difficultyApplyed = true;
-        if (gameTime>=1130){
+        if (gameTime>=1150){
             damageDe *= 1.02;
         }else{
             damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
@@ -1490,7 +1492,7 @@ function increaseDifficulty() {
         kickbackDistance = Math.max(0.06/1.25**(player.bulletType-1),kickbackDistance*0.9);
         // 原本呢，这里是只有一遍的，但那就需要2000秒才能完成游戏，过于坐牢，而且我不想再慢慢调平衡性，所以就成这样了()
         // 反正10秒才跑1次，没逝的)
-        if (gameTime>=1130){
+        if (gameTime>=1150){
             damageDe *= 1.02;
         }else{
             damageDe = Math.max(1.17,enemyHealthRate/1.15)*damageDe;
