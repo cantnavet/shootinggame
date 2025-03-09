@@ -16,7 +16,7 @@ const damageTypes =[2,200,70000,20000000,7000000000,2000000000000];
 const XTypes =[1,2,3,4,5,6];
 const upgradeSpawnTime =[200,400,600,800,1000,99999999];
 const colors =['#663300','#ffffff','#ffff00','#888888','#00ffff','#000000'];
-// 这辈子都用不着的神必单位合集
+// 这辈子都用不着的神必单位合集，不用中文是因为我找不到好字体(
 const numberToEng =['','K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','Ud','Dd','Td','Qad','Qid','Sxd','Spd', 'Ocd', 'Nod', 'VgUvg' ,'Dvg' ,'Tvg', 'Qavg', 'Qivg', 'Sxvg', 'Spvg', 'Ocvg', 'Novg', 'TgUtg', 'Dtg', 'Ttg', 'Qatg','Qitg','Sxtg','Sptg', 'Octg', 'Notg', 'QagUqag', 'Dqag' ,'Tqag', 'Qaqag' ,'QiQag' ,'SxQag', 'SpQag', 'OcQag', 'NoQag','Bruh'];
 const bulletSpeeds =[5,8,12,16,20,25];
 const fireLims =[5,4,3.3,2.5,2,1];
@@ -139,7 +139,7 @@ speedRange2.addEventListener('input', function() {
     document.getElementById('speedValue2').textContent = this.value;
 });
 
-//声音池
+//打击音效池
 class SoundPool {
     constructor(src, poolSize) {
       this.pool = [];
@@ -408,10 +408,11 @@ function drawBullets() {
             rightBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].right, b.x-8, b.y-5));
         }
     }else if (quality === 1){
+
+        // 画质2只绘制补间外的子弹，不过补间的子弹还是会参与碰撞运算的
         const leftBullets = bullets.filter(b => !b.side && b.draw);
         const rightBullets = bullets.filter(b => b.side && b.draw);
         
-        // 单次绘制同类型子弹
         if (leftBullets.length) {
             leftBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].left, b.x-21, b.y-5));
         }
@@ -419,7 +420,6 @@ function drawBullets() {
             rightBullets.forEach(b => ctx.drawImage(bulletCache[b.type-1].right, b.x-8, b.y-5));
         }
     }else if (quality === 2) {
-        
         bullets.forEach(b => {
             ctx.fillStyle = colors[b.type-1];
             ctx.fillRect(b.x, b.y, player.bulletWidth*2, player.bulletWidth*2);
@@ -729,6 +729,8 @@ function drawBarriers() {
         const lv = Math.abs(barrier.leftValue) > maxDisplayValue? barrier.leftValue.toExponential(3): barrier.leftValue.toFixed(2);
         const mv = Math.abs(barrier.midValue) > maxDisplayValue? barrier.midValue.toExponential(3): barrier.midValue.toFixed(2);
         const rv = Math.abs(barrier.rightValue) > maxDisplayValue? barrier.rightValue.toExponential(3): barrier.rightValue.toFixed(2);
+        
+        // 这一大坨懒得整合了，反正能跑还不影响性能()
         if (barrier.leftValue > 0){
             ctx.fillText(
                 `${barrier.typel}`, 
@@ -808,9 +810,6 @@ function checkCollisions() {
     const scaleFactor = (deltaTime / 8.335) * timeScale;
 
     
-
-
-    //  // 预过滤有效对象‌:ml-citation{ref="4,6" data="citationList"}
     const validEnemies = enemies.filter(enemy => enemy.health > 0);
 
       bullets.forEach((bullet, bIndex) => {
@@ -868,6 +867,7 @@ function checkCollisions() {
       });
     checktime = Date.now()-startDT;
 
+    // 子弹与屏障的碰撞检测
     const bSpeed = ((fallSpeedBase**1/2)+0.8) * timeScale* (deltaTime / 8.335);
     bullets.forEach((bullet) => {
         barriers.forEach((barrier) => {
@@ -914,6 +914,8 @@ function checkCollisions() {
             }
         });
     });
+
+    // 清算敌人
     enemies.forEach((enemy, eIndex) => {
         if (enemy.health < 0.05) {
             enemy.health=0;
@@ -1031,7 +1033,7 @@ function drawUI() {
     }
 }
 
-// 暂停
+// 暂停要干的事真多(
 function stop() {
     if (Date.now() - stopCD < 1000 || Date.now() - stopTime < 500) return;
     if (gameOver || mainCD) return;
@@ -1052,7 +1054,6 @@ function stop() {
         clearInterval(interval);
         clearInterval(interval2);
     }else{
-        // 这里貌似有点小bug，但不好修，也不知道是什么，反正到时候发生了再说吧.jpg()
         stopCD = Date.now();
         enemySpawnTimer += (Date.now()-stopTime);
         lastFrameTime = Date.now();
@@ -1455,6 +1456,9 @@ function applyUpgrade(barrier) {
     if (oldBcount === 0 && player.bulletCount>0){
         addAchievement("极限自救！",3,bTypes[player.bulletType-1]);
     }
+    if (0===1){
+        addAchievement("数学不存在了！",-1,heart);
+    }
 }
 
 function checkEnemyCollision(newEnemy) {
@@ -1556,7 +1560,7 @@ function bossSpawn() {
     }
 }
 
-// 别问为什么... 当我搓完一堆switch后突然意识到可以用数组就成这样了(
+// 别问为什么这点东西都要单独出堆function，当我搓完一堆switch后突然意识到可以用数组就成这样了(
 function bulletDamageCalc(type){
     if (type>=1 && type<=6) return damageTypes[type-1];
 }
@@ -1619,6 +1623,7 @@ function addEndListener(element, callback) {
     });
 }
 
+// 成就三板斧：添加，计数，显示
 function addAchievement(name, place, img){
     if (achievement[place] === 0 || place === 4){
         dA.name = name;
@@ -1776,3 +1781,4 @@ function start() {
     initGame();
     gameLoop();
 }
+// 是开始，也是结束
